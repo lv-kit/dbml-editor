@@ -1,5 +1,12 @@
 <script lang="ts">
-	import { Parser } from '@dbml/core';
+	import { HEADER_HEIGHT, ROW_HEIGHT } from './dbml-diagram-layout';
+	import {
+		keepLastValidDiagram,
+		parseDbmlDiagram,
+		type DiagramRef,
+		type DiagramTable,
+		type ParsedDiagram
+	} from './dbml-diagram-parser';
 
 	interface Props {
 		dbml: string;
@@ -7,26 +14,6 @@
 	}
 
 	let { dbml, onchange }: Props = $props();
-
-	interface DiagramTable {
-		name: string;
-		note: string;
-		headerColor: string;
-		fields: { name: string; type: string; pk: boolean; note: string }[];
-		x: number;
-		y: number;
-		width: number;
-		height: number;
-	}
-
-	interface DiagramRef {
-		fromTable: string;
-		fromField: string;
-		toTable: string;
-		toField: string;
-		fromRelation: string;
-		toRelation: string;
-	}
 
 	interface NoteTooltip {
 		table: string;
@@ -37,13 +24,6 @@
 		y: number;
 	}
 
-	const TABLE_WIDTH = 220;
-	const HEADER_HEIGHT = 32;
-	const ROW_HEIGHT = 26;
-	const TABLE_PADDING = 8;
-	const GRID_GAP_X = 60;
-	const GRID_GAP_Y = 40;
-	const COLUMNS = 4;
 	const TOOLTIP_WIDTH = 240;
 	const TOOLTIP_COLORS = {
 		shadow: 'rgba(15,23,42,0.18)',
@@ -54,84 +34,21 @@
 		note: '#e2e8f0'
 	};
 
-	const COLORS = [
-		'#3498db',
-		'#2ecc71',
-		'#e74c3c',
-		'#f39c12',
-		'#9b59b6',
-		'#1abc9c',
-		'#e67e22',
-		'#2980b9',
-		'#27ae60',
-		'#c0392b',
-		'#d35400',
-		'#8e44ad'
-	];
-
 	// Custom table positions (overrides grid layout when dragged)
 	let tablePositions: Record<string, { x: number; y: number }> = $state({});
+	let parsed = $state<ParsedDiagram>({ tables: [], refs: [], error: null });
+	let lastValidParsed = $state<ParsedDiagram | null>(null);
 
-	let parsed = $derived.by(() => {
-		try {
-			const parser = new Parser();
-			const database = parser.parse(dbml, 'dbmlv2');
-			const tables: DiagramTable[] = [];
-			const refs: DiagramRef[] = [];
+	$effect(() => {
+		const nextParsed = parseDbmlDiagram(dbml, tablePositions);
 
-			let tableIndex = 0;
-			for (const schema of database.schemas) {
-				for (const table of schema.tables) {
-					const fields = table.fields.map((f: any) => ({
-						name: f.name,
-						type: f.type?.type_name || String(f.type || ''),
-						pk: f.pk,
-						note: f.note || ''
-					}));
-
-					const tableNote = table.note || '';
-					const height = HEADER_HEIGHT + fields.length * ROW_HEIGHT + TABLE_PADDING;
-					const col = tableIndex % COLUMNS;
-					const row = Math.floor(tableIndex / COLUMNS);
-					const defaultX = col * (TABLE_WIDTH + GRID_GAP_X) + 20;
-					const defaultY = row * (300 + GRID_GAP_Y) + 20;
-
-					const pos = tablePositions[table.name];
-					const x = pos ? pos.x : defaultX;
-					const y = pos ? pos.y : defaultY;
-
-					tables.push({
-						name: table.name,
-						note: tableNote,
-						headerColor: COLORS[tableIndex % COLORS.length],
-						fields,
-						x,
-						y,
-						width: TABLE_WIDTH,
-						height
-					});
-
-					tableIndex++;
-				}
-
-				for (const ref of schema.refs) {
-					if (ref.endpoints.length >= 2) {
-						refs.push({
-							fromTable: ref.endpoints[0].tableName,
-							fromField: ref.endpoints[0].fieldNames[0],
-							toTable: ref.endpoints[1].tableName,
-							toField: ref.endpoints[1].fieldNames[0],
-							fromRelation: ref.endpoints[0].relation,
-							toRelation: ref.endpoints[1].relation
-						});
-					}
-				}
-			}
-
-			return { tables, refs, error: null };
-		} catch (e: any) {
-			return { tables: [], refs: [], error: e.message || 'Parse error' };
+		if (!nextParsed.error) {
+			parsed = nextParsed;
+			lastValidParsed = nextParsed;
+			return;
 		}
+
+		parsed = keepLastValidDiagram(nextParsed, lastValidParsed);
 	});
 
 	function getTableByName(name: string): DiagramTable | undefined {
@@ -714,7 +631,7 @@
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
 	bind:this={containerEl}
-	class="h-full w-full overflow-hidden bg-white outline-none"
+	class="relative h-full w-full overflow-hidden bg-white outline-none"
 	role="application"
 	tabindex="0"
 	onwheel={handleWheel}
@@ -728,7 +645,16 @@
 		mouseDownPos = null;
 	}}
 >
-	{#if parsed.error}
+	{#if parsed.error && parsed.tables.length > 0}
+		<div
+			data-testid="diagram-parse-warning"
+			class="absolute top-3 right-3 z-10 max-w-72 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 shadow-sm"
+		>
+			<div class="font-semibold">Parse error</div>
+			<div class="mt-1 line-clamp-3">{parsed.error}</div>
+		</div>
+	{/if}
+	{#if parsed.error && parsed.tables.length === 0}
 		<div class="flex h-full items-center justify-center text-gray-400">
 			<div class="text-center">
 				<p class="mb-2 text-lg">Diagram</p>
