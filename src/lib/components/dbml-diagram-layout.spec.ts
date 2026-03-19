@@ -3,6 +3,9 @@ import { describe, expect, it } from 'vitest';
 import {
 	GRID_GAP_Y,
 	HEADER_HEIGHT,
+	NOTE_HEADER_HEIGHT,
+	NOTE_LINE_HEIGHT,
+	NOTE_SPACING_TOP,
 	ROW_HEIGHT,
 	TABLE_PADDING,
 	layoutTables
@@ -41,7 +44,7 @@ describe('layoutTables', () => {
 		]);
 
 		const firstTableHeight = HEADER_HEIGHT + ROW_HEIGHT + TABLE_PADDING;
-		const noteHeight = 8 + 28 + 2 * 16;
+		const noteHeight = NOTE_SPACING_TOP + NOTE_HEADER_HEIGHT + 2 * NOTE_LINE_HEIGHT;
 
 		expect(layouts[4].y).toBe(20 + firstTableHeight + noteHeight + GRID_GAP_Y);
 	});

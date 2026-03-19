@@ -7,6 +7,10 @@ export const GRID_GAP_Y = 40;
 export const COLUMNS = 4;
 const GRID_START_X = 20;
 const GRID_START_Y = 20;
+export const NOTE_WRAP_THRESHOLD = 30;
+export const NOTE_SPACING_TOP = 8;
+export const NOTE_HEADER_HEIGHT = 28;
+export const NOTE_LINE_HEIGHT = 16;
 
 export interface DiagramLayoutTable {
 	name: string;
@@ -27,9 +31,9 @@ function getTableHeight(fieldCount: number): number {
 }
 
 function getTableNoteHeight(note: string): number {
-	if (!note) return 0;
-	const lineCount = note.length > 30 ? 2 : 1;
-	return 8 + 28 + lineCount * 16;
+	if (note.length === 0) return 0;
+	const lineCount = note.length > NOTE_WRAP_THRESHOLD ? 2 : 1;
+	return NOTE_SPACING_TOP + NOTE_HEADER_HEIGHT + lineCount * NOTE_LINE_HEIGHT;
 }
 
 function getColumnIndexForX(x: number): number {
