@@ -200,6 +200,25 @@
 		return () => window.removeEventListener('mouseup', onMouseUp);
 	});
 
+	// Use window-level keydown (capture phase) so we intercept Delete/Backspace
+	// before CodeMirror processes it when a diagram selection is active
+	$effect(() => {
+		const onKeyDown = (e: KeyboardEvent) => handleKeyDown(e);
+		window.addEventListener('keydown', onKeyDown, true);
+		return () => window.removeEventListener('keydown', onKeyDown, true);
+	});
+
+	// Clear selection when clicking outside the diagram container
+	$effect(() => {
+		const onMouseDown = (e: MouseEvent) => {
+			if (selection && containerEl && !containerEl.contains(e.target as Node)) {
+				selection = null;
+			}
+		};
+		window.addEventListener('mousedown', onMouseDown, true);
+		return () => window.removeEventListener('mousedown', onMouseDown, true);
+	});
+
 	function clientToSvg(clientX: number, clientY: number): { x: number; y: number } {
 		if (!containerEl) return { x: 0, y: 0 };
 		const rect = containerEl.getBoundingClientRect();
@@ -415,14 +434,93 @@
 		const toTo = `${ref.toTable}.${ref.toField}`;
 
 		const lines = dbml.split('\n');
-		const newLines = lines.filter((line) => {
+
+		// 1. Try standalone Ref: line removal
+		let foundStandalone = false;
+		const filteredLines = lines.filter((line) => {
 			const trimmed = line.trim();
-			if (trimmed.startsWith('Ref') && trimmed.includes(fromTo) && trimmed.includes(toTo)) return false;
+			if (trimmed.startsWith('Ref') && trimmed.includes(fromTo) && trimmed.includes(toTo)) {
+				foundStandalone = true;
+				return false;
+			}
 			return true;
 		});
 
-		onchange(cleanupDbml(newLines.join('\n')));
-		selection = null;
+		if (foundStandalone) {
+			onchange(cleanupDbml(filteredLines.join('\n')));
+			selection = null;
+			return;
+		}
+
+		// 2. Try inline ref removal (e.g. field_name type [ref: > table.field, ...])
+		const candidates = [
+			{ table: ref.fromTable, field: ref.fromField, target: toTo },
+			{ table: ref.toTable, field: ref.toField, target: fromTo }
+		];
+
+		let insideTable = false;
+		let currentTable = '';
+		let braceDepth = 0;
+
+		for (let i = 0; i < lines.length; i++) {
+			const trimmed = lines[i].trim();
+
+			if (!insideTable) {
+				const tableMatch = trimmed.match(/^Table\s+(\S+)\s*\{/);
+				if (tableMatch) {
+					insideTable = true;
+					currentTable = tableMatch[1];
+					braceDepth = 1;
+				}
+				continue;
+			}
+
+			for (const ch of trimmed) {
+				if (ch === '{') braceDepth++;
+				else if (ch === '}') braceDepth--;
+			}
+
+			if (braceDepth <= 0) {
+				insideTable = false;
+				continue;
+			}
+
+			for (const cand of candidates) {
+				if (currentTable !== cand.table) continue;
+
+				const fieldMatch = trimmed.match(/^(\S+)\s+/);
+				if (!fieldMatch || fieldMatch[1] !== cand.field) continue;
+
+				const targetEsc = cand.target.replace(/\./g, '\\.');
+				const refPattern = new RegExp(`ref:\\s*[><\\-]\\s*${targetEsc}`);
+				if (!refPattern.test(lines[i])) continue;
+
+				let newLine = lines[i];
+
+				// Try: ", ref: X target" (ref preceded by comma)
+				const p1 = new RegExp(`,\\s*ref:\\s*[><\\-]\\s*${targetEsc}`);
+				if (p1.test(newLine)) {
+					newLine = newLine.replace(p1, '');
+				} else {
+					// Try: "ref: X target, " (ref followed by comma)
+					const p2 = new RegExp(`ref:\\s*[><\\-]\\s*${targetEsc}\\s*,\\s*`);
+					if (p2.test(newLine)) {
+						newLine = newLine.replace(p2, '');
+					} else {
+						// ref is the only annotation
+						newLine = newLine.replace(refPattern, '');
+					}
+				}
+
+				// Clean up empty brackets
+				newLine = newLine.replace(/\[\s*\]/, '');
+
+				lines[i] = newLine;
+				onchange(cleanupDbml(lines.join('\n')));
+				selection = null;
+				return;
+			}
+		}
 	}
 
 	function removeTable(tableName: string) {
@@ -519,6 +617,7 @@
 	function handleKeyDown(e: KeyboardEvent) {
 		if (selection && (e.key === 'Delete' || e.key === 'Backspace')) {
 			e.preventDefault();
+			e.stopImmediatePropagation();
 			if (selection.type === 'ref') {
 				removeRef(selection.ref);
 			} else if (selection.type === 'table') {
@@ -553,7 +652,6 @@
 	onwheel={handleWheel}
 	onmousedown={handleMouseDown}
 	onmousemove={handleMouseMove}
-	onkeydown={handleKeyDown}
 	onmouseleave={() => { isPanning = false; draggingTable = null; connecting = null; hasDragged = false; mouseDownPos = null; }}
 >
 	{#if parsed.error}
