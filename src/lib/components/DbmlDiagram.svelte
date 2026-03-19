@@ -10,8 +10,9 @@
 
 	interface DiagramTable {
 		name: string;
+		note: string;
 		headerColor: string;
-		fields: { name: string; type: string; pk: boolean }[];
+		fields: { name: string; type: string; pk: boolean; note: string }[];
 		x: number;
 		y: number;
 		width: number;
@@ -57,9 +58,11 @@
 					const fields = table.fields.map((f: any) => ({
 						name: f.name,
 						type: f.type?.type_name || String(f.type || ''),
-						pk: f.pk
+						pk: f.pk,
+						note: f.note || ''
 					}));
 
+					const tableNote = table.note || '';
 					const height = HEADER_HEIGHT + fields.length * ROW_HEIGHT + TABLE_PADDING;
 					const col = tableIndex % COLUMNS;
 					const row = Math.floor(tableIndex / COLUMNS);
@@ -72,6 +75,7 @@
 
 					tables.push({
 						name: table.name,
+						note: tableNote,
 						headerColor: COLORS[tableIndex % COLORS.length],
 						fields,
 						x,
@@ -186,6 +190,9 @@
 
 	// Highlight field under cursor during connection
 	let hoveredField = $state<{ table: string; field: string } | null>(null);
+
+	// Tooltip for field notes on hover
+	let noteTooltip = $state<{ table: string; field: string; note: string; x: number; y: number } | null>(null);
 
 	$effect(() => {
 		if (containerEl) {
@@ -635,10 +642,19 @@
 		if (connecting && (tableName !== connecting.table || fieldName !== connecting.field)) {
 			hoveredField = { table: tableName, field: fieldName };
 		}
+		// Show note tooltip
+		const table = getTableByName(tableName);
+		if (!table) return;
+		const field = table.fields.find(f => f.name === fieldName);
+		if (field && field.note) {
+			const fy = getFieldY(table, fieldName);
+			noteTooltip = { table: tableName, field: fieldName, note: field.note, x: table.x + table.width + 8, y: fy };
+		}
 	}
 
 	function handleFieldMouseLeave() {
 		hoveredField = null;
+		noteTooltip = null;
 	}
 </script>
 
@@ -893,9 +909,124 @@
 						>
 							{field.type}
 						</text>
+
+						<!-- Note indicator dot for fields with notes -->
+						{#if field.note}
+							<circle
+								cx={table.x + table.width - 6}
+								cy={fy + 6}
+								r="3"
+								fill="#fbbf24"
+								style="pointer-events: none"
+							/>
+						{/if}
 					{/each}
 				</g>
+
+				<!-- Table note as sticky note -->
+				{#if table.note}
+					{@const noteX = table.x}
+					{@const noteY = table.y + table.height + 8}
+					{@const noteWidth = table.width}
+					{@const noteLines = table.note.length > 30 ? [table.note.slice(0, 30), table.note.slice(30, 60) + (table.note.length > 60 ? '\u2026' : '')] : [table.note]}
+					{@const noteHeight = 28 + noteLines.length * 16}
+					<g style="pointer-events: none">
+						<!-- Sticky note shadow -->
+						<rect
+							x={noteX + 2}
+							y={noteY + 2}
+							width={noteWidth}
+							height={noteHeight}
+							rx="3"
+							fill="rgba(0,0,0,0.06)"
+						/>
+						<!-- Sticky note body -->
+						<rect
+							x={noteX}
+							y={noteY}
+							width={noteWidth}
+							height={noteHeight}
+							rx="3"
+							fill="#fef9c3"
+							stroke="#fbbf24"
+							stroke-width="1"
+						/>
+						<!-- Sticky note top accent -->
+						<rect
+							x={noteX}
+							y={noteY}
+							width={noteWidth}
+							height="4"
+							rx="3"
+							fill="#fbbf24"
+						/>
+						<!-- Note label -->
+						<text
+							x={noteX + 8}
+							y={noteY + 18}
+							fill="#b45309"
+							font-size="11"
+							dominant-baseline="middle"
+							font-weight="bold"
+						>
+							Note
+						</text>
+						<!-- Note text lines -->
+						{#each noteLines as line, li}
+							<text
+								x={noteX + 8}
+								y={noteY + 18 + (li + 1) * 16}
+								fill="#78350f"
+								font-size="11"
+								dominant-baseline="middle"
+							>
+								{line}
+							</text>
+						{/each}
+					</g>
+				{/if}
 			{/each}
+
+			<!-- Field note tooltip on hover -->
+			{#if noteTooltip}
+				{@const ttWidth = Math.min(Math.max(noteTooltip.note.length * 7 + 20, 80), 250)}
+				{@const ttHeight = 28}
+				<g style="pointer-events: none">
+					<!-- Tooltip shadow -->
+					<rect
+						x={noteTooltip.x + 1}
+						y={noteTooltip.y - ttHeight / 2 + 1}
+						width={ttWidth}
+						height={ttHeight}
+						rx="4"
+						fill="rgba(0,0,0,0.1)"
+					/>
+					<!-- Tooltip body -->
+					<rect
+						x={noteTooltip.x}
+						y={noteTooltip.y - ttHeight / 2}
+						width={ttWidth}
+						height={ttHeight}
+						rx="4"
+						fill="#1e293b"
+					/>
+					<!-- Tooltip arrow -->
+					<polygon
+						points="{noteTooltip.x - 4},{noteTooltip.y} {noteTooltip.x},{noteTooltip.y - 4} {noteTooltip.x},{noteTooltip.y + 4}"
+						fill="#1e293b"
+					/>
+					<!-- Tooltip text -->
+					<text
+						x={noteTooltip.x + 10}
+						y={noteTooltip.y + 1}
+						fill="white"
+						font-size="11"
+						dominant-baseline="middle"
+					>
+						{noteTooltip.note.length > 35 ? noteTooltip.note.slice(0, 35) + '\u2026' : noteTooltip.note}
+					</text>
+				</g>
+			{/if}
 		</svg>
 	{/if}
 </div>
