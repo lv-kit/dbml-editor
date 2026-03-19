@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Parser } from '@dbml/core';
+	import { HEADER_HEIGHT, layoutTables, ROW_HEIGHT } from './dbml-diagram-layout';
 
 	interface Props {
 		dbml: string;
@@ -37,13 +38,6 @@
 		y: number;
 	}
 
-	const TABLE_WIDTH = 220;
-	const HEADER_HEIGHT = 32;
-	const ROW_HEIGHT = 26;
-	const TABLE_PADDING = 8;
-	const GRID_GAP_X = 60;
-	const GRID_GAP_Y = 40;
-	const COLUMNS = 4;
 	const TOOLTIP_WIDTH = 240;
 	const TOOLTIP_COLORS = {
 		shadow: 'rgba(15,23,42,0.18)',
@@ -80,6 +74,12 @@
 			const refs: DiagramRef[] = [];
 
 			let tableIndex = 0;
+			const pendingTables: Array<{
+				name: string;
+				note: string;
+				headerColor: string;
+				fields: { name: string; type: string; pk: boolean; note: string }[];
+			}> = [];
 			for (const schema of database.schemas) {
 				for (const table of schema.tables) {
 					const fields = table.fields.map((f: any) => ({
@@ -89,26 +89,11 @@
 						note: f.note || ''
 					}));
 
-					const tableNote = table.note || '';
-					const height = HEADER_HEIGHT + fields.length * ROW_HEIGHT + TABLE_PADDING;
-					const col = tableIndex % COLUMNS;
-					const row = Math.floor(tableIndex / COLUMNS);
-					const defaultX = col * (TABLE_WIDTH + GRID_GAP_X) + 20;
-					const defaultY = row * (300 + GRID_GAP_Y) + 20;
-
-					const pos = tablePositions[table.name];
-					const x = pos ? pos.x : defaultX;
-					const y = pos ? pos.y : defaultY;
-
-					tables.push({
+					pendingTables.push({
 						name: table.name,
-						note: tableNote,
+						note: table.note || '',
 						headerColor: COLORS[tableIndex % COLORS.length],
-						fields,
-						x,
-						y,
-						width: TABLE_WIDTH,
-						height
+						fields
 					});
 
 					tableIndex++;
@@ -127,6 +112,22 @@
 					}
 				}
 			}
+
+			const positions = layoutTables(
+				pendingTables.map((table) => ({
+					name: table.name,
+					note: table.note,
+					fieldCount: table.fields.length,
+					position: tablePositions[table.name]
+				}))
+			);
+
+			tables.push(
+				...pendingTables.map((table, index) => ({
+					...table,
+					...positions[index]
+				}))
+			);
 
 			return { tables, refs, error: null };
 		} catch (e: any) {
