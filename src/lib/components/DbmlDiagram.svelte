@@ -44,6 +44,15 @@
 	const GRID_GAP_X = 60;
 	const GRID_GAP_Y = 40;
 	const COLUMNS = 4;
+	const TOOLTIP_WIDTH = 240;
+	const TOOLTIP_COLORS = {
+		shadow: 'rgba(15,23,42,0.18)',
+		body: '#0f172a',
+		border: '#334155',
+		divider: '#475569',
+		type: '#fbbf24',
+		note: '#e2e8f0'
+	};
 
 	const COLORS = [
 		'#3498db',
@@ -138,9 +147,11 @@
 	function truncateText(text: string, maxChars: number): string {
 		const chars = Array.from(text);
 		if (chars.length <= maxChars) return text;
-		return `${chars.slice(0, Math.max(maxChars - 1, 1)).join('')}\u2026`;
+		if (maxChars <= 1) return '\u2026';
+		return `${chars.slice(0, maxChars - 1).join('')}\u2026`;
 	}
 
+	// Split note text into up to two lines and truncate the final line with an ellipsis.
 	function splitTooltipNote(note: string, maxCharsPerLine = 26, maxLines = 2): string[] {
 		const chars = Array.from(note.trim());
 		if (chars.length === 0) return [''];
@@ -869,7 +880,6 @@
 							width={table.width}
 							height={ROW_HEIGHT}
 							data-testid={`field-row-${table.name}-${field.name}`}
-							data-note-field={`${table.name}.${field.name}`}
 							fill={isFieldSelected
 								? 'rgba(59, 130, 246, 0.18)'
 								: isHovered
@@ -1074,7 +1084,7 @@
 			<!-- Field note tooltip on hover -->
 			{#if noteTooltip}
 				{@const noteLines = splitTooltipNote(noteTooltip.note)}
-				{@const ttWidth = 240}
+				{@const ttWidth = TOOLTIP_WIDTH}
 				{@const ttHeight = 30 + noteLines.length * 16}
 				{@const ttTop = noteTooltip.y - ttHeight / 2}
 				<g data-testid="note-tooltip" style="pointer-events: none">
@@ -1085,7 +1095,7 @@
 						width={ttWidth}
 						height={ttHeight}
 						rx="4"
-						fill="rgba(15,23,42,0.18)"
+						fill={TOOLTIP_COLORS.shadow}
 					/>
 					<!-- Tooltip body -->
 					<rect
@@ -1094,8 +1104,8 @@
 						width={ttWidth}
 						height={ttHeight}
 						rx="4"
-						fill="#0f172a"
-						stroke="#334155"
+						fill={TOOLTIP_COLORS.body}
+						stroke={TOOLTIP_COLORS.border}
 						stroke-width="1"
 					/>
 					<line
@@ -1103,14 +1113,14 @@
 						y1={ttTop + 24}
 						x2={noteTooltip.x + ttWidth - 10}
 						y2={ttTop + 24}
-						stroke="#475569"
+						stroke={TOOLTIP_COLORS.divider}
 						stroke-width="1"
 					/>
 					<!-- Tooltip arrow -->
 					<polygon
 						points="{noteTooltip.x - 4},{noteTooltip.y} {noteTooltip.x},{noteTooltip.y -
 							4} {noteTooltip.x},{noteTooltip.y + 4}"
-						fill="#0f172a"
+						fill={TOOLTIP_COLORS.body}
 					/>
 					<text
 						data-testid="note-tooltip-field"
@@ -1127,7 +1137,7 @@
 						data-testid="note-tooltip-type"
 						x={noteTooltip.x + ttWidth - 10}
 						y={ttTop + 15}
-						fill="#fbbf24"
+						fill={TOOLTIP_COLORS.type}
 						font-size="12"
 						font-weight="600"
 						text-anchor="end"
@@ -1140,7 +1150,7 @@
 							data-testid={`note-tooltip-note-${index}`}
 							x={noteTooltip.x + 10}
 							y={ttTop + 37 + index * 16}
-							fill="#e2e8f0"
+							fill={TOOLTIP_COLORS.note}
 							font-size="11"
 							dominant-baseline="middle"
 						>
