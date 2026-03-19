@@ -1,6 +1,7 @@
 <script lang="ts">
 	import DbmlCodeEditor from '$lib/components/DbmlCodeEditor.svelte';
 	import DbmlDiagram from '$lib/components/DbmlDiagram.svelte';
+	import HelpTooltip from '$lib/components/HelpTooltip.svelte';
 
 	let fileInput = $state<HTMLInputElement>();
 	let fileName = $state('');
@@ -95,6 +96,7 @@
 				>
 					ダウンロード
 				</button>
+				<HelpTooltip />
 			</div>
 		</header>
 
@@ -107,7 +109,7 @@
 
 			<!-- Diagram -->
 			<div class="h-full w-1/2">
-				<DbmlDiagram dbml={content} />
+				<DbmlDiagram dbml={content} onchange={(v) => (content = v)} />
 			</div>
 		</div>
 	</div>
