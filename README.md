@@ -1,42 +1,16 @@
-# sv
+# DBML Editor
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+This is a tool that allows you to edit DBML using a visual editor. While it currently offers only basic functionality, we plan to expand it gradually, so we appreciate your support.
 
-## Creating a project
+## 利用方法
 
-If you're seeing this, you've probably already done this step. Congrats!
-
-```sh
-# create a new project
-npx sv create my-app
-```
-
-To recreate this project with the same configuration:
 
 ```sh
-# recreate this project
-bun x sv@0.12.8 create --template minimal --types ts --add prettier eslint vitest="usages:unit,component" playwright tailwindcss="plugins:forms" sveltekit-adapter="adapter:cloudflare+cfTarget:workers" devtools-json drizzle="database:postgresql+postgresql:postgres.js+docker:yes" paraglide="languageTags:en, es, ja+demo:yes" storybook mcp="ide:claude-code,gemini,cursor,other+setup:remote" --install bun dblm
-```
+# install dependencies package
+npm install
 
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
 npm run dev
 
 # or start the server and open the app in a new browser tab
 npm run dev -- --open
 ```
-
-## Building
-
-To create a production version of your app:
-
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
