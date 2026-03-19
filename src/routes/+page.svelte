@@ -1,4 +1,7 @@
 <script lang="ts">
+	import DbmlCodeEditor from '$lib/components/DbmlCodeEditor.svelte';
+	import DbmlDiagram from '$lib/components/DbmlDiagram.svelte';
+
 	let fileInput = $state<HTMLInputElement>();
 	let fileName = $state('');
 	let content = $state('');
@@ -30,19 +33,23 @@
 		a.click();
 		URL.revokeObjectURL(url);
 	}
+
+	function openNewFile() {
+		fileName = '';
+		content = '';
+		savedContent = '';
+	}
 </script>
 
-<div class="mx-auto max-w-5xl p-6">
-	<h1 class="mb-6 text-2xl font-bold">DBML Editor</h1>
-
-	{#if !fileName}
-		<!-- Step 1: Select DBML file -->
+{#if !fileName}
+	<div class="flex h-screen flex-col items-center justify-center bg-gray-50">
+		<h1 class="mb-8 text-3xl font-bold text-gray-800">DBML Editor</h1>
 		<div
-			class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-12"
+			class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-white p-16"
 		>
 			<p class="mb-4 text-gray-600">DBMLファイルを選択してください</p>
 			<button
-				class="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+				class="rounded-md bg-blue-600 px-6 py-2.5 text-white hover:bg-blue-700"
 				onclick={() => fileInput?.click()}
 			>
 				ファイルを選択
@@ -55,48 +62,53 @@
 				onchange={handleFileSelect}
 			/>
 		</div>
-	{:else}
-		<!-- Step 2-5: Edit, Save, Download -->
-		<div class="mb-4 flex items-center justify-between">
+	</div>
+{:else}
+	<div class="flex h-screen flex-col">
+		<!-- Toolbar -->
+		<header class="flex items-center justify-between border-b border-gray-700 bg-gray-800 px-4 py-2">
 			<div class="flex items-center gap-3">
-				<span class="text-sm font-medium text-gray-700">{fileName}</span>
+				<span class="text-sm font-medium text-gray-200">{fileName}</span>
 				{#if isEdited}
-					<span class="rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-700"
-						>未保存の変更あり</span
-					>
+					<span class="rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs text-yellow-300">
+						未保存
+					</span>
 				{/if}
 			</div>
-			<div class="flex gap-2">
+			<div class="flex items-center gap-2">
 				<button
-					class="rounded-md bg-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-300"
-					onclick={() => {
-						fileName = '';
-						content = '';
-						savedContent = '';
-					}}
+					class="rounded px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-700"
+					onclick={openNewFile}
 				>
-					別のファイルを開く
+					別のファイル
 				</button>
 				<button
-					class="rounded-md bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700 disabled:opacity-50"
+					class="rounded bg-green-600 px-3 py-1.5 text-sm text-white hover:bg-green-700 disabled:opacity-40"
 					onclick={save}
 					disabled={!isEdited}
 				>
 					保存
 				</button>
 				<button
-					class="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+					class="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
 					onclick={download}
 				>
 					ダウンロード
 				</button>
 			</div>
-		</div>
+		</header>
 
-		<textarea
-			bind:value={content}
-			class="h-[calc(100vh-200px)] w-full resize-none rounded-lg border border-gray-300 bg-gray-50 p-4 font-mono text-sm focus:border-blue-500 focus:ring-blue-500"
-			spellcheck="false"
-		></textarea>
-	{/if}
-</div>
+		<!-- Editor + Diagram split -->
+		<div class="flex flex-1 overflow-hidden">
+			<!-- Code Editor -->
+			<div class="h-full w-1/2 border-r border-gray-700">
+				<DbmlCodeEditor value={content} onchange={(v) => (content = v)} />
+			</div>
+
+			<!-- Diagram -->
+			<div class="h-full w-1/2">
+				<DbmlDiagram dbml={content} />
+			</div>
+		</div>
+	</div>
+{/if}
