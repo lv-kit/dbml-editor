@@ -66,7 +66,6 @@
 					const defaultX = col * (TABLE_WIDTH + GRID_GAP_X) + 20;
 					const defaultY = row * (300 + GRID_GAP_Y) + 20;
 
-					// Use custom position if available, otherwise grid default
 					const pos = tablePositions[table.name];
 					const x = pos ? pos.x : defaultX;
 					const y = pos ? pos.y : defaultY;
@@ -139,7 +138,6 @@
 			x2 = toRight;
 		}
 
-		const midX = (x1 + x2) / 2;
 		const cpOffset = Math.max(Math.abs(x2 - x1) * 0.4, 30);
 
 		return `M ${x1} ${fromY} C ${x1 + cpOffset} ${fromY}, ${x2 - cpOffset * Math.sign(x2 - x1)} ${toY}, ${x2} ${toY}`;
@@ -172,10 +170,34 @@
 	let connecting = $state<{ table: string; field: string } | null>(null);
 	let connectMousePos = $state({ x: 0, y: 0 });
 
+	// Track if mouse actually moved during mousedown→mouseup (drag detection)
+	let hasDragged = $state(false);
+	let mouseDownPos = $state<{ x: number; y: number } | null>(null);
+	const DRAG_THRESHOLD = 5;
+
+	// Unified selection state
+	type Selection =
+		| { type: 'ref'; ref: DiagramRef }
+		| { type: 'table'; tableName: string }
+		| { type: 'field'; tableName: string; fieldName: string }
+		| null;
+
+	let selection = $state<Selection>(null);
+
+	// Highlight field under cursor during connection
+	let hoveredField = $state<{ table: string; field: string } | null>(null);
+
 	$effect(() => {
 		if (containerEl) {
 			viewBox = { x: 0, y: 0, w: containerEl.clientWidth, h: containerEl.clientHeight };
 		}
+	});
+
+	// Use window-level mouseup to reliably catch mouseup even if mouse leaves SVG elements
+	$effect(() => {
+		const onMouseUp = (e: MouseEvent) => handleMouseUp(e);
+		window.addEventListener('mouseup', onMouseUp);
+		return () => window.removeEventListener('mouseup', onMouseUp);
 	});
 
 	function clientToSvg(clientX: number, clientY: number): { x: number; y: number } {
@@ -216,7 +238,12 @@
 	}
 
 	function handleMouseDown(e: MouseEvent) {
-		// Only pan with middle-click or shift+left-click (when not dragging a table or connecting)
+		// Left click on empty area (not on table header/field/ref — those call stopPropagation)
+		// → clear selection
+		if (e.button === 0 && !e.shiftKey && !draggingTable && !connecting) {
+			selection = null;
+		}
+
 		if (draggingTable || connecting) return;
 		if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
 			isPanning = true;
@@ -225,8 +252,20 @@
 		}
 	}
 
+	function checkDragThreshold(e: MouseEvent) {
+		if (!hasDragged && mouseDownPos) {
+			const dx = e.clientX - mouseDownPos.x;
+			const dy = e.clientY - mouseDownPos.y;
+			if (Math.sqrt(dx * dx + dy * dy) >= DRAG_THRESHOLD) {
+				hasDragged = true;
+			}
+		}
+	}
+
 	function handleMouseMove(e: MouseEvent) {
-		if (draggingTable) {
+		checkDragThreshold(e);
+
+		if (draggingTable && hasDragged) {
 			const svgPos = clientToSvg(e.clientX, e.clientY);
 			tablePositions = {
 				...tablePositions,
@@ -238,7 +277,7 @@
 			return;
 		}
 
-		if (connecting) {
+		if (connecting && hasDragged) {
 			connectMousePos = clientToSvg(e.clientX, e.clientY);
 			return;
 		}
@@ -254,27 +293,48 @@
 
 	function handleMouseUp(e: MouseEvent) {
 		if (draggingTable) {
+			const tableName = draggingTable;
 			draggingTable = null;
+			if (!hasDragged) {
+				// Click on table header → select table
+				selection = { type: 'table', tableName };
+				containerEl?.focus();
+			}
+			mouseDownPos = null;
+			hasDragged = false;
 			return;
 		}
 
 		if (connecting) {
-			// Check if we released on a field
-			const svgPos = clientToSvg(e.clientX, e.clientY);
-			const target = findFieldAtPosition(svgPos.x, svgPos.y);
-			if (target && (target.table !== connecting.table || target.field !== connecting.field)) {
-				addRef(connecting.table, connecting.field, target.table, target.field);
-			}
+			const source = connecting;
 			connecting = null;
+			if (!hasDragged) {
+				// Click on field → select field
+				selection = { type: 'field', tableName: source.table, fieldName: source.field };
+				containerEl?.focus();
+			} else {
+				// Dragged → try to create ref
+				const svgPos = clientToSvg(e.clientX, e.clientY);
+				const target = findFieldAtPosition(svgPos.x, svgPos.y);
+				if (target && (target.table !== source.table || target.field !== source.field)) {
+					addRef(source.table, source.field, target.table, target.field);
+				}
+			}
+			mouseDownPos = null;
+			hasDragged = false;
 			return;
 		}
 
 		isPanning = false;
+		mouseDownPos = null;
+		hasDragged = false;
 	}
 
 	function handleTableHeaderMouseDown(e: MouseEvent, tableName: string) {
 		if (e.button !== 0 || e.shiftKey) return;
 		e.stopPropagation();
+		mouseDownPos = { x: e.clientX, y: e.clientY };
+		hasDragged = false;
 		const table = getTableByName(tableName);
 		if (!table) return;
 
@@ -286,6 +346,8 @@
 	function handleFieldMouseDown(e: MouseEvent, tableName: string, fieldName: string) {
 		if (e.button !== 0 || e.shiftKey) return;
 		e.stopPropagation();
+		mouseDownPos = { x: e.clientX, y: e.clientY };
+		hasDragged = false;
 		connecting = { table: tableName, field: fieldName };
 		connectMousePos = clientToSvg(e.clientX, e.clientY);
 	}
@@ -310,7 +372,7 @@
 	}
 
 	function getConnectingLinePath(): string | null {
-		if (!connecting) return null;
+		if (!connecting || !hasDragged) return null;
 		const table = getTableByName(connecting.table);
 		if (!table) return null;
 
@@ -323,8 +385,152 @@
 		return `M ${fromX} ${fromY} C ${fromX + cpOffset} ${fromY}, ${toX - cpOffset} ${toY}, ${toX} ${toY}`;
 	}
 
-	// Highlight field under cursor during connection
-	let hoveredField = $state<{ table: string; field: string } | null>(null);
+	// --- Selection & deletion ---
+
+	function handleRefMouseDown(e: MouseEvent, ref: DiagramRef) {
+		if (e.button !== 0) return;
+		e.stopPropagation();
+		selection = { type: 'ref', ref };
+		containerEl?.focus();
+	}
+
+	function cleanupDbml(text: string): string {
+		const lines = text.split('\n');
+		const cleaned: string[] = [];
+		for (const line of lines) {
+			if (line.trim() === '' && cleaned.length > 0 && cleaned[cleaned.length - 1].trim() === '') {
+				continue;
+			}
+			cleaned.push(line);
+		}
+		while (cleaned.length > 0 && cleaned[cleaned.length - 1].trim() === '') {
+			cleaned.pop();
+		}
+		return cleaned.join('\n') + '\n';
+	}
+
+	function removeRef(ref: DiagramRef) {
+		if (!onchange) return;
+		const fromTo = `${ref.fromTable}.${ref.fromField}`;
+		const toTo = `${ref.toTable}.${ref.toField}`;
+
+		const lines = dbml.split('\n');
+		const newLines = lines.filter((line) => {
+			const trimmed = line.trim();
+			if (trimmed.startsWith('Ref') && trimmed.includes(fromTo) && trimmed.includes(toTo)) return false;
+			return true;
+		});
+
+		onchange(cleanupDbml(newLines.join('\n')));
+		selection = null;
+	}
+
+	function removeTable(tableName: string) {
+		if (!onchange) return;
+		const lines = dbml.split('\n');
+		const newLines: string[] = [];
+		let insideTarget = false;
+		let braceDepth = 0;
+
+		for (const line of lines) {
+			const trimmed = line.trim();
+			if (!insideTarget) {
+				const tableMatch = trimmed.match(/^Table\s+(\S+)\s*\{/);
+				if (tableMatch && tableMatch[1] === tableName) {
+					insideTarget = true;
+					braceDepth = 1;
+					continue;
+				}
+				newLines.push(line);
+			} else {
+				for (const ch of trimmed) {
+					if (ch === '{') braceDepth++;
+					else if (ch === '}') braceDepth--;
+				}
+				if (braceDepth <= 0) {
+					insideTarget = false;
+				}
+			}
+		}
+
+		// Also remove Ref lines that reference this table
+		const filtered = newLines.filter((line) => {
+			const trimmed = line.trim();
+			if (!trimmed.startsWith('Ref')) return true;
+			if (trimmed.includes(`${tableName}.`)) return false;
+			return true;
+		});
+
+		const { [tableName]: _, ...rest } = tablePositions;
+		tablePositions = rest;
+
+		onchange(cleanupDbml(filtered.join('\n')));
+		selection = null;
+	}
+
+	function removeField(tableName: string, fieldName: string) {
+		if (!onchange) return;
+		const lines = dbml.split('\n');
+		const newLines: string[] = [];
+		let insideTarget = false;
+		let braceDepth = 0;
+
+		for (const line of lines) {
+			const trimmed = line.trim();
+			if (!insideTarget) {
+				const tableMatch = trimmed.match(/^Table\s+(\S+)\s*\{/);
+				if (tableMatch && tableMatch[1] === tableName) {
+					insideTarget = true;
+					braceDepth = 1;
+					newLines.push(line);
+					continue;
+				}
+				newLines.push(line);
+			} else {
+				for (const ch of trimmed) {
+					if (ch === '{') braceDepth++;
+					else if (ch === '}') braceDepth--;
+				}
+				if (braceDepth <= 0) {
+					insideTarget = false;
+					newLines.push(line);
+					continue;
+				}
+				const fieldMatch = trimmed.match(/^(\S+)\s+/);
+				if (fieldMatch && fieldMatch[1] === fieldName) {
+					continue; // skip this field line
+				}
+				newLines.push(line);
+			}
+		}
+
+		// Also remove Ref lines that reference this specific field
+		const filtered = newLines.filter((line) => {
+			const trimmed = line.trim();
+			if (!trimmed.startsWith('Ref')) return true;
+			if (trimmed.includes(`${tableName}.${fieldName}`)) return false;
+			return true;
+		});
+
+		onchange(cleanupDbml(filtered.join('\n')));
+		selection = null;
+	}
+
+	function handleKeyDown(e: KeyboardEvent) {
+		if (selection && (e.key === 'Delete' || e.key === 'Backspace')) {
+			e.preventDefault();
+			if (selection.type === 'ref') {
+				removeRef(selection.ref);
+			} else if (selection.type === 'table') {
+				removeTable(selection.tableName);
+			} else if (selection.type === 'field') {
+				removeField(selection.tableName, selection.fieldName);
+			}
+		}
+		if (e.key === 'Escape') {
+			selection = null;
+		}
+	}
 
 	function handleFieldMouseEnter(tableName: string, fieldName: string) {
 		if (connecting && (tableName !== connecting.table || fieldName !== connecting.field)) {
@@ -338,15 +544,17 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
 	bind:this={containerEl}
-	class="h-full w-full overflow-hidden bg-white"
+	class="h-full w-full overflow-hidden bg-white outline-none"
 	role="application"
+	tabindex="0"
 	onwheel={handleWheel}
 	onmousedown={handleMouseDown}
 	onmousemove={handleMouseMove}
-	onmouseup={handleMouseUp}
-	onmouseleave={() => { isPanning = false; draggingTable = null; connecting = null; }}
+	onkeydown={handleKeyDown}
+	onmouseleave={() => { isPanning = false; draggingTable = null; connecting = null; hasDragged = false; mouseDownPos = null; }}
 >
 	{#if parsed.error}
 		<div class="flex h-full items-center justify-center text-gray-400">
@@ -364,23 +572,36 @@
 			width="100%"
 			height="100%"
 			viewBox="{viewBox.x} {viewBox.y} {viewBox.w} {viewBox.h}"
-			style="cursor: {draggingTable ? 'grabbing' : connecting ? 'crosshair' : 'default'}"
+			style="cursor: {draggingTable && hasDragged ? 'grabbing' : connecting && hasDragged ? 'crosshair' : 'default'}"
 		>
 			<!-- Relationship lines -->
 			{#each parsed.refs as ref}
 				{@const path = computeRefPath(ref)}
+				{@const isSelected = selection?.type === 'ref' && selection.ref.fromTable === ref.fromTable && selection.ref.fromField === ref.fromField && selection.ref.toTable === ref.toTable && selection.ref.toField === ref.toField}
 				{#if path}
+					<!-- Invisible wider hit area for clicking -->
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<path
 						d={path}
 						fill="none"
-						stroke="#94a3b8"
-						stroke-width="1.5"
+						stroke="transparent"
+						stroke-width="12"
+						style="cursor: pointer"
+						onmousedown={(e) => handleRefMouseDown(e, ref)}
+					/>
+					<!-- Visible line -->
+					<path
+						d={path}
+						fill="none"
+						stroke={isSelected ? '#3b82f6' : '#94a3b8'}
+						stroke-width={isSelected ? 2.5 : 1.5}
+						style="pointer-events: none"
 					/>
 				{/if}
 			{/each}
 
 			<!-- Connection drawing preview -->
-			{#if connecting}
+			{#if connecting && hasDragged}
 				{@const connectPath = getConnectingLinePath()}
 				{#if connectPath}
 					<path
@@ -395,6 +616,7 @@
 
 			<!-- Tables -->
 			{#each parsed.tables as table}
+				{@const isTableSelected = selection?.type === 'table' && selection.tableName === table.name}
 				<g>
 					<!-- Shadow -->
 					<rect
@@ -414,11 +636,11 @@
 						height={table.height}
 						rx="4"
 						fill="white"
-						stroke={draggingTable === table.name ? '#3b82f6' : '#e2e8f0'}
-						stroke-width={draggingTable === table.name ? 2 : 1}
+						stroke={isTableSelected ? '#3b82f6' : draggingTable === table.name && hasDragged ? '#3b82f6' : '#e2e8f0'}
+						stroke-width={isTableSelected || (draggingTable === table.name && hasDragged) ? 2 : 1}
 					/>
 
-					<!-- Header (draggable) -->
+					<!-- Header (draggable / clickable for selection) -->
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<rect
 						x={table.x}
@@ -458,23 +680,39 @@
 						{@const fy = table.y + HEADER_HEIGHT + i * ROW_HEIGHT}
 						{@const isHovered = hoveredField?.table === table.name && hoveredField?.field === field.name}
 						{@const isConnectSource = connecting?.table === table.name && connecting?.field === field.name}
+						{@const isFieldSelected = selection?.type === 'field' && selection.tableName === table.name && selection.fieldName === field.name}
 
-						<!-- Hit area for connection (invisible wider area) -->
+						<!-- Hit area for connection / selection -->
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<rect
 							x={table.x}
 							y={fy}
 							width={table.width}
 							height={ROW_HEIGHT}
-							fill={isHovered ? 'rgba(59, 130, 246, 0.1)' : isConnectSource ? 'rgba(59, 130, 246, 0.05)' : 'transparent'}
-							style="cursor: {connecting ? 'crosshair' : 'pointer'}"
+							fill={isFieldSelected ? 'rgba(59, 130, 246, 0.18)' : isHovered ? 'rgba(59, 130, 246, 0.1)' : isConnectSource ? 'rgba(59, 130, 246, 0.05)' : 'transparent'}
+							style="cursor: {connecting && hasDragged ? 'crosshair' : 'pointer'}"
 							onmousedown={(e) => handleFieldMouseDown(e, table.name, field.name)}
 							onmouseenter={() => handleFieldMouseEnter(table.name, field.name)}
 							onmouseleave={handleFieldMouseLeave}
 						/>
 
+						<!-- Selected field border indicator -->
+						{#if isFieldSelected}
+							<rect
+								x={table.x + 1}
+								y={fy + 1}
+								width={table.width - 2}
+								height={ROW_HEIGHT - 2}
+								rx="2"
+								fill="none"
+								stroke="#3b82f6"
+								stroke-width="1.5"
+								style="pointer-events: none"
+							/>
+						{/if}
+
 						<!-- Row separator -->
-						{#if i > 0}
+						{#if i > 0 && !isFieldSelected}
 							<line
 								x1={table.x}
 								y1={fy}
@@ -491,7 +729,7 @@
 							cx={table.x}
 							cy={fy + ROW_HEIGHT / 2}
 							r="4"
-							fill={isHovered ? '#3b82f6' : isConnectSource ? '#3b82f6' : '#cbd5e1'}
+							fill={isFieldSelected ? '#3b82f6' : isHovered ? '#3b82f6' : isConnectSource ? '#3b82f6' : '#cbd5e1'}
 							stroke="white"
 							stroke-width="1.5"
 							style="pointer-events: none"
@@ -502,7 +740,7 @@
 							cx={table.x + table.width}
 							cy={fy + ROW_HEIGHT / 2}
 							r="4"
-							fill={isHovered ? '#3b82f6' : isConnectSource ? '#3b82f6' : '#cbd5e1'}
+							fill={isFieldSelected ? '#3b82f6' : isHovered ? '#3b82f6' : isConnectSource ? '#3b82f6' : '#cbd5e1'}
 							stroke="white"
 							stroke-width="1.5"
 							style="pointer-events: none"
