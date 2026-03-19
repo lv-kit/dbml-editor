@@ -3,9 +3,10 @@
 
 	interface Props {
 		dbml: string;
+		onchange?: (dbml: string) => void;
 	}
 
-	let { dbml }: Props = $props();
+	let { dbml, onchange }: Props = $props();
 
 	interface DiagramTable {
 		name: string;
@@ -40,6 +41,9 @@
 		'#27ae60', '#c0392b', '#d35400', '#8e44ad'
 	];
 
+	// Custom table positions (overrides grid layout when dragged)
+	let tablePositions: Record<string, { x: number; y: number }> = $state({});
+
 	let parsed = $derived.by(() => {
 		try {
 			const parser = new Parser();
@@ -59,8 +63,13 @@
 					const height = HEADER_HEIGHT + fields.length * ROW_HEIGHT + TABLE_PADDING;
 					const col = tableIndex % COLUMNS;
 					const row = Math.floor(tableIndex / COLUMNS);
-					const x = col * (TABLE_WIDTH + GRID_GAP_X) + 20;
-					const y = row * (300 + GRID_GAP_Y) + 20;
+					const defaultX = col * (TABLE_WIDTH + GRID_GAP_X) + 20;
+					const defaultY = row * (300 + GRID_GAP_Y) + 20;
+
+					// Use custom position if available, otherwise grid default
+					const pos = tablePositions[table.name];
+					const x = pos ? pos.x : defaultX;
+					const y = pos ? pos.y : defaultY;
 
 					tables.push({
 						name: table.name,
@@ -155,16 +164,32 @@
 	let isPanning = $state(false);
 	let panStart = $state({ x: 0, y: 0, vx: 0, vy: 0 });
 
+	// Drag table state
+	let draggingTable = $state<string | null>(null);
+	let dragOffset = $state({ x: 0, y: 0 });
+
+	// Connection drawing state
+	let connecting = $state<{ table: string; field: string } | null>(null);
+	let connectMousePos = $state({ x: 0, y: 0 });
+
 	$effect(() => {
 		if (containerEl) {
 			viewBox = { x: 0, y: 0, w: containerEl.clientWidth, h: containerEl.clientHeight };
 		}
 	});
 
+	function clientToSvg(clientX: number, clientY: number): { x: number; y: number } {
+		if (!containerEl) return { x: 0, y: 0 };
+		const rect = containerEl.getBoundingClientRect();
+		return {
+			x: viewBox.x + ((clientX - rect.left) / rect.width) * viewBox.w,
+			y: viewBox.y + ((clientY - rect.top) / rect.height) * viewBox.h
+		};
+	}
+
 	function handleWheel(e: WheelEvent) {
 		e.preventDefault();
 		if (e.ctrlKey || e.metaKey) {
-			// Zoom
 			const scaleFactor = e.deltaY > 0 ? 1.1 : 0.9;
 			const rect = containerEl!.getBoundingClientRect();
 			const mouseX = e.clientX - rect.left;
@@ -181,7 +206,6 @@
 				h: newH
 			};
 		} else {
-			// Pan
 			const panSpeed = viewBox.w / (containerEl?.clientWidth || 800);
 			viewBox = {
 				...viewBox,
@@ -192,6 +216,8 @@
 	}
 
 	function handleMouseDown(e: MouseEvent) {
+		// Only pan with middle-click or shift+left-click (when not dragging a table or connecting)
+		if (draggingTable || connecting) return;
 		if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
 			isPanning = true;
 			panStart = { x: e.clientX, y: e.clientY, vx: viewBox.x, vy: viewBox.y };
@@ -200,6 +226,23 @@
 	}
 
 	function handleMouseMove(e: MouseEvent) {
+		if (draggingTable) {
+			const svgPos = clientToSvg(e.clientX, e.clientY);
+			tablePositions = {
+				...tablePositions,
+				[draggingTable]: {
+					x: svgPos.x - dragOffset.x,
+					y: svgPos.y - dragOffset.y
+				}
+			};
+			return;
+		}
+
+		if (connecting) {
+			connectMousePos = clientToSvg(e.clientX, e.clientY);
+			return;
+		}
+
 		if (!isPanning || !containerEl) return;
 		const scale = viewBox.w / containerEl.clientWidth;
 		viewBox = {
@@ -209,8 +252,88 @@
 		};
 	}
 
-	function handleMouseUp() {
+	function handleMouseUp(e: MouseEvent) {
+		if (draggingTable) {
+			draggingTable = null;
+			return;
+		}
+
+		if (connecting) {
+			// Check if we released on a field
+			const svgPos = clientToSvg(e.clientX, e.clientY);
+			const target = findFieldAtPosition(svgPos.x, svgPos.y);
+			if (target && (target.table !== connecting.table || target.field !== connecting.field)) {
+				addRef(connecting.table, connecting.field, target.table, target.field);
+			}
+			connecting = null;
+			return;
+		}
+
 		isPanning = false;
+	}
+
+	function handleTableHeaderMouseDown(e: MouseEvent, tableName: string) {
+		if (e.button !== 0 || e.shiftKey) return;
+		e.stopPropagation();
+		const table = getTableByName(tableName);
+		if (!table) return;
+
+		const svgPos = clientToSvg(e.clientX, e.clientY);
+		dragOffset = { x: svgPos.x - table.x, y: svgPos.y - table.y };
+		draggingTable = tableName;
+	}
+
+	function handleFieldMouseDown(e: MouseEvent, tableName: string, fieldName: string) {
+		if (e.button !== 0 || e.shiftKey) return;
+		e.stopPropagation();
+		connecting = { table: tableName, field: fieldName };
+		connectMousePos = clientToSvg(e.clientX, e.clientY);
+	}
+
+	function findFieldAtPosition(svgX: number, svgY: number): { table: string; field: string } | null {
+		for (const table of parsed.tables) {
+			if (svgX < table.x || svgX > table.x + table.width) continue;
+			const relY = svgY - table.y - HEADER_HEIGHT;
+			if (relY < 0 || relY > table.fields.length * ROW_HEIGHT) continue;
+			const fieldIndex = Math.floor(relY / ROW_HEIGHT);
+			if (fieldIndex >= 0 && fieldIndex < table.fields.length) {
+				return { table: table.name, field: table.fields[fieldIndex].name };
+			}
+		}
+		return null;
+	}
+
+	function addRef(fromTable: string, fromField: string, toTable: string, toField: string) {
+		if (!onchange) return;
+		const refLine = `\nRef: ${fromTable}.${fromField} > ${toTable}.${toField}\n`;
+		onchange(dbml + refLine);
+	}
+
+	function getConnectingLinePath(): string | null {
+		if (!connecting) return null;
+		const table = getTableByName(connecting.table);
+		if (!table) return null;
+
+		const fromY = getFieldY(table, connecting.field);
+		const fromX = table.x + table.width;
+		const toX = connectMousePos.x;
+		const toY = connectMousePos.y;
+		const cpOffset = Math.max(Math.abs(toX - fromX) * 0.4, 30);
+
+		return `M ${fromX} ${fromY} C ${fromX + cpOffset} ${fromY}, ${toX - cpOffset} ${toY}, ${toX} ${toY}`;
+	}
+
+	// Highlight field under cursor during connection
+	let hoveredField = $state<{ table: string; field: string } | null>(null);
+
+	function handleFieldMouseEnter(tableName: string, fieldName: string) {
+		if (connecting && (tableName !== connecting.table || fieldName !== connecting.field)) {
+			hoveredField = { table: tableName, field: fieldName };
+		}
+	}
+
+	function handleFieldMouseLeave() {
+		hoveredField = null;
 	}
 </script>
 
@@ -223,7 +346,7 @@
 	onmousedown={handleMouseDown}
 	onmousemove={handleMouseMove}
 	onmouseup={handleMouseUp}
-	onmouseleave={handleMouseUp}
+	onmouseleave={() => { isPanning = false; draggingTable = null; connecting = null; }}
 >
 	{#if parsed.error}
 		<div class="flex h-full items-center justify-center text-gray-400">
@@ -241,6 +364,7 @@
 			width="100%"
 			height="100%"
 			viewBox="{viewBox.x} {viewBox.y} {viewBox.w} {viewBox.h}"
+			style="cursor: {draggingTable ? 'grabbing' : connecting ? 'crosshair' : 'default'}"
 		>
 			<!-- Relationship lines -->
 			{#each parsed.refs as ref}
@@ -254,6 +378,20 @@
 					/>
 				{/if}
 			{/each}
+
+			<!-- Connection drawing preview -->
+			{#if connecting}
+				{@const connectPath = getConnectingLinePath()}
+				{#if connectPath}
+					<path
+						d={connectPath}
+						fill="none"
+						stroke="#3b82f6"
+						stroke-width="2"
+						stroke-dasharray="6 3"
+					/>
+				{/if}
+			{/if}
 
 			<!-- Tables -->
 			{#each parsed.tables as table}
@@ -276,11 +414,12 @@
 						height={table.height}
 						rx="4"
 						fill="white"
-						stroke="#e2e8f0"
-						stroke-width="1"
+						stroke={draggingTable === table.name ? '#3b82f6' : '#e2e8f0'}
+						stroke-width={draggingTable === table.name ? 2 : 1}
 					/>
 
-					<!-- Header -->
+					<!-- Header (draggable) -->
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<rect
 						x={table.x}
 						y={table.y}
@@ -288,6 +427,8 @@
 						height={HEADER_HEIGHT}
 						rx="4"
 						fill={table.headerColor}
+						style="cursor: grab"
+						onmousedown={(e) => handleTableHeaderMouseDown(e, table.name)}
 					/>
 					<rect
 						x={table.x}
@@ -295,6 +436,8 @@
 						width={table.width}
 						height="4"
 						fill={table.headerColor}
+						style="cursor: grab"
+						onmousedown={(e) => handleTableHeaderMouseDown(e, table.name)}
 					/>
 
 					<!-- Table name -->
@@ -305,6 +448,7 @@
 						font-size="13"
 						font-weight="bold"
 						dominant-baseline="middle"
+						style="pointer-events: none"
 					>
 						{table.name}
 					</text>
@@ -312,6 +456,23 @@
 					<!-- Fields -->
 					{#each table.fields as field, i}
 						{@const fy = table.y + HEADER_HEIGHT + i * ROW_HEIGHT}
+						{@const isHovered = hoveredField?.table === table.name && hoveredField?.field === field.name}
+						{@const isConnectSource = connecting?.table === table.name && connecting?.field === field.name}
+
+						<!-- Hit area for connection (invisible wider area) -->
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<rect
+							x={table.x}
+							y={fy}
+							width={table.width}
+							height={ROW_HEIGHT}
+							fill={isHovered ? 'rgba(59, 130, 246, 0.1)' : isConnectSource ? 'rgba(59, 130, 246, 0.05)' : 'transparent'}
+							style="cursor: {connecting ? 'crosshair' : 'pointer'}"
+							onmousedown={(e) => handleFieldMouseDown(e, table.name, field.name)}
+							onmouseenter={() => handleFieldMouseEnter(table.name, field.name)}
+							onmouseleave={handleFieldMouseLeave}
+						/>
+
 						<!-- Row separator -->
 						{#if i > 0}
 							<line
@@ -321,8 +482,31 @@
 								y2={fy}
 								stroke="#f1f5f9"
 								stroke-width="1"
+								style="pointer-events: none"
 							/>
 						{/if}
+
+						<!-- Connection dot indicator (left) -->
+						<circle
+							cx={table.x}
+							cy={fy + ROW_HEIGHT / 2}
+							r="4"
+							fill={isHovered ? '#3b82f6' : isConnectSource ? '#3b82f6' : '#cbd5e1'}
+							stroke="white"
+							stroke-width="1.5"
+							style="pointer-events: none"
+						/>
+
+						<!-- Connection dot indicator (right) -->
+						<circle
+							cx={table.x + table.width}
+							cy={fy + ROW_HEIGHT / 2}
+							r="4"
+							fill={isHovered ? '#3b82f6' : isConnectSource ? '#3b82f6' : '#cbd5e1'}
+							stroke="white"
+							stroke-width="1.5"
+							style="pointer-events: none"
+						/>
 
 						<!-- PK indicator -->
 						{#if field.pk}
@@ -333,6 +517,7 @@
 								font-size="10"
 								font-weight="bold"
 								dominant-baseline="middle"
+								style="pointer-events: none"
 							>
 								PK
 							</text>
@@ -343,6 +528,7 @@
 								font-size="12"
 								font-weight="600"
 								dominant-baseline="middle"
+								style="pointer-events: none"
 							>
 								{field.name}
 							</text>
@@ -353,6 +539,7 @@
 								fill="#475569"
 								font-size="12"
 								dominant-baseline="middle"
+								style="pointer-events: none"
 							>
 								{field.name}
 							</text>
@@ -366,6 +553,7 @@
 							font-size="11"
 							text-anchor="end"
 							dominant-baseline="middle"
+							style="pointer-events: none"
 						>
 							{field.type}
 						</text>
