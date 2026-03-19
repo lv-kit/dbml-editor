@@ -28,6 +28,15 @@
 		toRelation: string;
 	}
 
+	interface NoteTooltip {
+		table: string;
+		field: string;
+		fieldType: string;
+		note: string;
+		x: number;
+		y: number;
+	}
+
 	const TABLE_WIDTH = 220;
 	const HEADER_HEIGHT = 32;
 	const ROW_HEIGHT = 26;
@@ -37,9 +46,18 @@
 	const COLUMNS = 4;
 
 	const COLORS = [
-		'#3498db', '#2ecc71', '#e74c3c', '#f39c12',
-		'#9b59b6', '#1abc9c', '#e67e22', '#2980b9',
-		'#27ae60', '#c0392b', '#d35400', '#8e44ad'
+		'#3498db',
+		'#2ecc71',
+		'#e74c3c',
+		'#f39c12',
+		'#9b59b6',
+		'#1abc9c',
+		'#e67e22',
+		'#2980b9',
+		'#27ae60',
+		'#c0392b',
+		'#d35400',
+		'#8e44ad'
 	];
 
 	// Custom table positions (overrides grid layout when dragged)
@@ -117,6 +135,29 @@
 		return table.y + HEADER_HEIGHT + fieldIndex * ROW_HEIGHT + ROW_HEIGHT / 2;
 	}
 
+	function truncateText(text: string, maxChars: number): string {
+		const chars = Array.from(text);
+		if (chars.length <= maxChars) return text;
+		return `${chars.slice(0, Math.max(maxChars - 1, 1)).join('')}\u2026`;
+	}
+
+	function splitTooltipNote(note: string, maxCharsPerLine = 26, maxLines = 2): string[] {
+		const chars = Array.from(note.trim());
+		if (chars.length === 0) return [''];
+
+		const lines: string[] = [];
+		for (let i = 0; i < chars.length && lines.length < maxLines; i += maxCharsPerLine) {
+			const lineChars = chars.slice(i, i + maxCharsPerLine);
+			if (lines.length === maxLines - 1 && i + maxCharsPerLine < chars.length) {
+				lines.push(`${lineChars.slice(0, Math.max(lineChars.length - 1, 1)).join('')}\u2026`);
+				return lines;
+			}
+			lines.push(lineChars.join(''));
+		}
+
+		return lines;
+	}
+
 	function computeRefPath(ref: DiagramRef): string | null {
 		const fromTable = getTableByName(ref.fromTable);
 		const toTable = getTableByName(ref.toTable);
@@ -147,18 +188,8 @@
 		return `M ${x1} ${fromY} C ${x1 + cpOffset} ${fromY}, ${x2 - cpOffset * Math.sign(x2 - x1)} ${toY}, ${x2} ${toY}`;
 	}
 
-	let svgWidth = $derived(
-		Math.max(
-			800,
-			...parsed.tables.map((t) => t.x + t.width + 40)
-		)
-	);
-	let svgHeight = $derived(
-		Math.max(
-			600,
-			...parsed.tables.map((t) => t.y + t.height + 40)
-		)
-	);
+	let svgWidth = $derived(Math.max(800, ...parsed.tables.map((t) => t.x + t.width + 40)));
+	let svgHeight = $derived(Math.max(600, ...parsed.tables.map((t) => t.y + t.height + 40)));
 
 	// Pan & zoom state
 	let containerEl: HTMLDivElement | undefined = $state();
@@ -192,7 +223,7 @@
 	let hoveredField = $state<{ table: string; field: string } | null>(null);
 
 	// Tooltip for field notes on hover
-	let noteTooltip = $state<{ table: string; field: string; note: string; x: number; y: number } | null>(null);
+	let noteTooltip = $state<NoteTooltip | null>(null);
 
 	$effect(() => {
 		if (containerEl) {
@@ -378,7 +409,10 @@
 		connectMousePos = clientToSvg(e.clientX, e.clientY);
 	}
 
-	function findFieldAtPosition(svgX: number, svgY: number): { table: string; field: string } | null {
+	function findFieldAtPosition(
+		svgX: number,
+		svgY: number
+	): { table: string; field: string } | null {
 		for (const table of parsed.tables) {
 			if (svgX < table.x || svgX > table.x + table.width) continue;
 			const relY = svgY - table.y - HEADER_HEIGHT;
@@ -645,10 +679,17 @@
 		// Show note tooltip
 		const table = getTableByName(tableName);
 		if (!table) return;
-		const field = table.fields.find(f => f.name === fieldName);
+		const field = table.fields.find((f) => f.name === fieldName);
 		if (field && field.note) {
 			const fy = getFieldY(table, fieldName);
-			noteTooltip = { table: tableName, field: fieldName, note: field.note, x: table.x + table.width + 8, y: fy };
+			noteTooltip = {
+				table: tableName,
+				field: fieldName,
+				fieldType: field.type,
+				note: field.note,
+				x: table.x + table.width + 8,
+				y: fy
+			};
 		}
 	}
 
@@ -668,7 +709,13 @@
 	onwheel={handleWheel}
 	onmousedown={handleMouseDown}
 	onmousemove={handleMouseMove}
-	onmouseleave={() => { isPanning = false; draggingTable = null; connecting = null; hasDragged = false; mouseDownPos = null; }}
+	onmouseleave={() => {
+		isPanning = false;
+		draggingTable = null;
+		connecting = null;
+		hasDragged = false;
+		mouseDownPos = null;
+	}}
 >
 	{#if parsed.error}
 		<div class="flex h-full items-center justify-center text-gray-400">
@@ -686,12 +733,21 @@
 			width="100%"
 			height="100%"
 			viewBox="{viewBox.x} {viewBox.y} {viewBox.w} {viewBox.h}"
-			style="cursor: {draggingTable && hasDragged ? 'grabbing' : connecting && hasDragged ? 'crosshair' : 'default'}"
+			style="cursor: {draggingTable && hasDragged
+				? 'grabbing'
+				: connecting && hasDragged
+					? 'crosshair'
+					: 'default'}"
 		>
 			<!-- Relationship lines -->
 			{#each parsed.refs as ref}
 				{@const path = computeRefPath(ref)}
-				{@const isSelected = selection?.type === 'ref' && selection.ref.fromTable === ref.fromTable && selection.ref.fromField === ref.fromField && selection.ref.toTable === ref.toTable && selection.ref.toField === ref.toField}
+				{@const isSelected =
+					selection?.type === 'ref' &&
+					selection.ref.fromTable === ref.fromTable &&
+					selection.ref.fromField === ref.fromField &&
+					selection.ref.toTable === ref.toTable &&
+					selection.ref.toField === ref.toField}
 				{#if path}
 					<!-- Invisible wider hit area for clicking -->
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -750,7 +806,11 @@
 						height={table.height}
 						rx="4"
 						fill="white"
-						stroke={isTableSelected ? '#3b82f6' : draggingTable === table.name && hasDragged ? '#3b82f6' : '#e2e8f0'}
+						stroke={isTableSelected
+							? '#3b82f6'
+							: draggingTable === table.name && hasDragged
+								? '#3b82f6'
+								: '#e2e8f0'}
 						stroke-width={isTableSelected || (draggingTable === table.name && hasDragged) ? 2 : 1}
 					/>
 
@@ -792,9 +852,14 @@
 					<!-- Fields -->
 					{#each table.fields as field, i}
 						{@const fy = table.y + HEADER_HEIGHT + i * ROW_HEIGHT}
-						{@const isHovered = hoveredField?.table === table.name && hoveredField?.field === field.name}
-						{@const isConnectSource = connecting?.table === table.name && connecting?.field === field.name}
-						{@const isFieldSelected = selection?.type === 'field' && selection.tableName === table.name && selection.fieldName === field.name}
+						{@const isHovered =
+							hoveredField?.table === table.name && hoveredField?.field === field.name}
+						{@const isConnectSource =
+							connecting?.table === table.name && connecting?.field === field.name}
+						{@const isFieldSelected =
+							selection?.type === 'field' &&
+							selection.tableName === table.name &&
+							selection.fieldName === field.name}
 
 						<!-- Hit area for connection / selection -->
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -803,7 +868,15 @@
 							y={fy}
 							width={table.width}
 							height={ROW_HEIGHT}
-							fill={isFieldSelected ? 'rgba(59, 130, 246, 0.18)' : isHovered ? 'rgba(59, 130, 246, 0.1)' : isConnectSource ? 'rgba(59, 130, 246, 0.05)' : 'transparent'}
+							data-testid={`field-row-${table.name}-${field.name}`}
+							data-note-field={`${table.name}.${field.name}`}
+							fill={isFieldSelected
+								? 'rgba(59, 130, 246, 0.18)'
+								: isHovered
+									? 'rgba(59, 130, 246, 0.1)'
+									: isConnectSource
+										? 'rgba(59, 130, 246, 0.05)'
+										: 'transparent'}
 							style="cursor: {connecting && hasDragged ? 'crosshair' : 'pointer'}"
 							onmousedown={(e) => handleFieldMouseDown(e, table.name, field.name)}
 							onmouseenter={() => handleFieldMouseEnter(table.name, field.name)}
@@ -843,7 +916,13 @@
 							cx={table.x}
 							cy={fy + ROW_HEIGHT / 2}
 							r="4"
-							fill={isFieldSelected ? '#3b82f6' : isHovered ? '#3b82f6' : isConnectSource ? '#3b82f6' : '#cbd5e1'}
+							fill={isFieldSelected
+								? '#3b82f6'
+								: isHovered
+									? '#3b82f6'
+									: isConnectSource
+										? '#3b82f6'
+										: '#cbd5e1'}
 							stroke="white"
 							stroke-width="1.5"
 							style="pointer-events: none"
@@ -854,7 +933,13 @@
 							cx={table.x + table.width}
 							cy={fy + ROW_HEIGHT / 2}
 							r="4"
-							fill={isFieldSelected ? '#3b82f6' : isHovered ? '#3b82f6' : isConnectSource ? '#3b82f6' : '#cbd5e1'}
+							fill={isFieldSelected
+								? '#3b82f6'
+								: isHovered
+									? '#3b82f6'
+									: isConnectSource
+										? '#3b82f6'
+										: '#cbd5e1'}
 							stroke="white"
 							stroke-width="1.5"
 							style="pointer-events: none"
@@ -928,7 +1013,13 @@
 					{@const noteX = table.x}
 					{@const noteY = table.y + table.height + 8}
 					{@const noteWidth = table.width}
-					{@const noteLines = table.note.length > 30 ? [table.note.slice(0, 30), table.note.slice(30, 60) + (table.note.length > 60 ? '\u2026' : '')] : [table.note]}
+					{@const noteLines =
+						table.note.length > 30
+							? [
+									table.note.slice(0, 30),
+									table.note.slice(30, 60) + (table.note.length > 60 ? '\u2026' : '')
+								]
+							: [table.note]}
 					{@const noteHeight = 28 + noteLines.length * 16}
 					<g style="pointer-events: none">
 						<!-- Sticky note shadow -->
@@ -952,14 +1043,7 @@
 							stroke-width="1"
 						/>
 						<!-- Sticky note top accent -->
-						<rect
-							x={noteX}
-							y={noteY}
-							width={noteWidth}
-							height="4"
-							rx="3"
-							fill="#fbbf24"
-						/>
+						<rect x={noteX} y={noteY} width={noteWidth} height="4" rx="3" fill="#fbbf24" />
 						<!-- Note label -->
 						<text
 							x={noteX + 8}
@@ -989,42 +1073,80 @@
 
 			<!-- Field note tooltip on hover -->
 			{#if noteTooltip}
-				{@const ttWidth = Math.min(Math.max(noteTooltip.note.length * 7 + 20, 80), 250)}
-				{@const ttHeight = 28}
-				<g style="pointer-events: none">
+				{@const noteLines = splitTooltipNote(noteTooltip.note)}
+				{@const ttWidth = 240}
+				{@const ttHeight = 30 + noteLines.length * 16}
+				{@const ttTop = noteTooltip.y - ttHeight / 2}
+				<g data-testid="note-tooltip" style="pointer-events: none">
 					<!-- Tooltip shadow -->
 					<rect
 						x={noteTooltip.x + 1}
-						y={noteTooltip.y - ttHeight / 2 + 1}
+						y={ttTop + 1}
 						width={ttWidth}
 						height={ttHeight}
 						rx="4"
-						fill="rgba(0,0,0,0.1)"
+						fill="rgba(15,23,42,0.18)"
 					/>
 					<!-- Tooltip body -->
 					<rect
 						x={noteTooltip.x}
-						y={noteTooltip.y - ttHeight / 2}
+						y={ttTop}
 						width={ttWidth}
 						height={ttHeight}
 						rx="4"
-						fill="#1e293b"
+						fill="#0f172a"
+						stroke="#334155"
+						stroke-width="1"
+					/>
+					<line
+						x1={noteTooltip.x + 10}
+						y1={ttTop + 24}
+						x2={noteTooltip.x + ttWidth - 10}
+						y2={ttTop + 24}
+						stroke="#475569"
+						stroke-width="1"
 					/>
 					<!-- Tooltip arrow -->
 					<polygon
-						points="{noteTooltip.x - 4},{noteTooltip.y} {noteTooltip.x},{noteTooltip.y - 4} {noteTooltip.x},{noteTooltip.y + 4}"
-						fill="#1e293b"
+						points="{noteTooltip.x - 4},{noteTooltip.y} {noteTooltip.x},{noteTooltip.y -
+							4} {noteTooltip.x},{noteTooltip.y + 4}"
+						fill="#0f172a"
 					/>
-					<!-- Tooltip text -->
 					<text
+						data-testid="note-tooltip-field"
 						x={noteTooltip.x + 10}
-						y={noteTooltip.y + 1}
+						y={ttTop + 15}
 						fill="white"
-						font-size="11"
+						font-size="12"
+						font-weight="600"
 						dominant-baseline="middle"
 					>
-						{noteTooltip.note.length > 35 ? noteTooltip.note.slice(0, 35) + '\u2026' : noteTooltip.note}
+						{truncateText(noteTooltip.field, 20)}
 					</text>
+					<text
+						data-testid="note-tooltip-type"
+						x={noteTooltip.x + ttWidth - 10}
+						y={ttTop + 15}
+						fill="#fbbf24"
+						font-size="12"
+						font-weight="600"
+						text-anchor="end"
+						dominant-baseline="middle"
+					>
+						{truncateText(noteTooltip.fieldType, 16)}
+					</text>
+					{#each noteLines as line, index}
+						<text
+							data-testid={`note-tooltip-note-${index}`}
+							x={noteTooltip.x + 10}
+							y={ttTop + 37 + index * 16}
+							fill="#e2e8f0"
+							font-size="11"
+							dominant-baseline="middle"
+						>
+							{line}
+						</text>
+					{/each}
 				</g>
 			{/if}
 		</svg>
