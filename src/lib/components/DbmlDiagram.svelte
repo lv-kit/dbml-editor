@@ -11,9 +11,10 @@
 	interface Props {
 		dbml: string;
 		onchange?: (dbml: string) => void;
+		darkMode?: boolean;
 	}
 
-	let { dbml, onchange }: Props = $props();
+	let { dbml, onchange, darkMode = false }: Props = $props();
 
 	interface NoteTooltip {
 		table: string;
@@ -33,6 +34,30 @@
 		type: '#fbbf24',
 		note: '#e2e8f0'
 	};
+
+	// Colors that change based on dark mode
+	let colors = $derived({
+		canvasBg: darkMode ? '#0f172a' : 'white',
+		tableBg: darkMode ? '#1e293b' : 'white',
+		tableBorder: darkMode ? '#475569' : '#e2e8f0',
+		tableShadow: darkMode ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.08)',
+		refLine: darkMode ? '#64748b' : '#94a3b8',
+		rowSeparator: darkMode ? '#334155' : '#f1f5f9',
+		fieldName: darkMode ? '#cbd5e1' : '#475569',
+		pkFieldName: darkMode ? '#e2e8f0' : '#334155',
+		fieldType: darkMode ? '#64748b' : '#94a3b8',
+		pkColor: '#f59e0b',
+		dot: darkMode ? '#64748b' : '#cbd5e1',
+		dotStroke: darkMode ? '#1e293b' : 'white',
+		noteDot: '#fbbf24',
+		noteBg: darkMode ? '#1c1406' : '#fef9c3',
+		noteBorder: darkMode ? '#ca8a04' : '#fbbf24',
+		noteAccent: darkMode ? '#ca8a04' : '#fbbf24',
+		noteShadow: darkMode ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.06)',
+		noteLabel: darkMode ? '#fde68a' : '#b45309',
+		noteText: darkMode ? '#fef3c7' : '#78350f',
+		emptyText: darkMode ? '#475569' : '#9ca3af'
+	});
 
 	// Custom table positions (overrides grid layout when dragged)
 	let tablePositions: Record<string, { x: number; y: number }> = $state({});
@@ -631,7 +656,8 @@
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
 	bind:this={containerEl}
-	class="relative h-full w-full overflow-hidden bg-white outline-none"
+	class="relative h-full w-full overflow-hidden outline-none"
+	style="background-color: {colors.canvasBg}"
 	role="application"
 	tabindex="0"
 	onwheel={handleWheel}
@@ -648,21 +674,21 @@
 	{#if parsed.error && parsed.tables.length > 0}
 		<div
 			data-testid="diagram-parse-warning"
-			class="absolute top-3 right-3 z-10 max-w-72 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 shadow-sm"
+			class="absolute top-3 right-3 z-10 max-w-72 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 shadow-sm dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-300"
 		>
 			<div class="font-semibold">Parse error</div>
 			<div class="mt-1 line-clamp-3">{parsed.error}</div>
 		</div>
 	{/if}
 	{#if parsed.error && parsed.tables.length === 0}
-		<div class="flex h-full items-center justify-center text-gray-400">
+		<div class="flex h-full items-center justify-center" style="color: {colors.emptyText}">
 			<div class="text-center">
 				<p class="mb-2 text-lg">Diagram</p>
 				<p class="text-sm">{parsed.error}</p>
 			</div>
 		</div>
 	{:else if parsed.tables.length === 0}
-		<div class="flex h-full items-center justify-center text-gray-400">
+		<div class="flex h-full items-center justify-center" style="color: {colors.emptyText}">
 			<p>DBMLを入力するとダイアグラムが表示されます</p>
 		</div>
 	{:else}
@@ -700,7 +726,7 @@
 					<path
 						d={path}
 						fill="none"
-						stroke={isSelected ? '#3b82f6' : '#94a3b8'}
+						stroke={isSelected ? '#3b82f6' : colors.refLine}
 						stroke-width={isSelected ? 2.5 : 1.5}
 						style="pointer-events: none"
 					/>
@@ -732,7 +758,7 @@
 						width={table.width}
 						height={table.height}
 						rx="4"
-						fill="rgba(0,0,0,0.08)"
+						fill={colors.tableShadow}
 					/>
 
 					<!-- Table body -->
@@ -742,12 +768,12 @@
 						width={table.width}
 						height={table.height}
 						rx="4"
-						fill="white"
+						fill={colors.tableBg}
 						stroke={isTableSelected
 							? '#3b82f6'
 							: draggingTable === table.name && hasDragged
 								? '#3b82f6'
-								: '#e2e8f0'}
+								: colors.tableBorder}
 						stroke-width={isTableSelected || (draggingTable === table.name && hasDragged) ? 2 : 1}
 					/>
 
@@ -841,7 +867,7 @@
 								y1={fy}
 								x2={table.x + table.width}
 								y2={fy}
-								stroke="#f1f5f9"
+								stroke={colors.rowSeparator}
 								stroke-width="1"
 								style="pointer-events: none"
 							/>
@@ -858,8 +884,8 @@
 									? '#3b82f6'
 									: isConnectSource
 										? '#3b82f6'
-										: '#cbd5e1'}
-							stroke="white"
+										: colors.dot}
+							stroke={colors.dotStroke}
 							stroke-width="1.5"
 							style="pointer-events: none"
 						/>
@@ -875,8 +901,8 @@
 									? '#3b82f6'
 									: isConnectSource
 										? '#3b82f6'
-										: '#cbd5e1'}
-							stroke="white"
+										: colors.dot}
+							stroke={colors.dotStroke}
 							stroke-width="1.5"
 							style="pointer-events: none"
 						/>
@@ -897,7 +923,7 @@
 							<text
 								x={table.x + 30}
 								y={fy + ROW_HEIGHT / 2 + 1}
-								fill="#334155"
+								fill={colors.pkFieldName}
 								font-size="12"
 								font-weight="600"
 								dominant-baseline="middle"
@@ -909,7 +935,7 @@
 							<text
 								x={table.x + 10}
 								y={fy + ROW_HEIGHT / 2 + 1}
-								fill="#475569"
+								fill={colors.fieldName}
 								font-size="12"
 								dominant-baseline="middle"
 								style="pointer-events: none"
@@ -922,7 +948,7 @@
 						<text
 							x={table.x + table.width - 10}
 							y={fy + ROW_HEIGHT / 2 + 1}
-							fill="#94a3b8"
+							fill={colors.fieldType}
 							font-size="11"
 							text-anchor="end"
 							dominant-baseline="middle"
@@ -965,7 +991,7 @@
 							width={noteWidth}
 							height={noteHeight}
 							rx="3"
-							fill="rgba(0,0,0,0.06)"
+							fill={colors.noteShadow}
 						/>
 						<!-- Sticky note body -->
 						<rect
@@ -974,17 +1000,17 @@
 							width={noteWidth}
 							height={noteHeight}
 							rx="3"
-							fill="#fef9c3"
-							stroke="#fbbf24"
+							fill={colors.noteBg}
+							stroke={colors.noteBorder}
 							stroke-width="1"
 						/>
 						<!-- Sticky note top accent -->
-						<rect x={noteX} y={noteY} width={noteWidth} height="4" rx="3" fill="#fbbf24" />
+						<rect x={noteX} y={noteY} width={noteWidth} height="4" rx="3" fill={colors.noteAccent} />
 						<!-- Note label -->
 						<text
 							x={noteX + 8}
 							y={noteY + 18}
-							fill="#b45309"
+							fill={colors.noteLabel}
 							font-size="11"
 							dominant-baseline="middle"
 							font-weight="bold"
@@ -996,7 +1022,7 @@
 							<text
 								x={noteX + 8}
 								y={noteY + 18 + (li + 1) * 16}
-								fill="#78350f"
+								fill={colors.noteText}
 								font-size="11"
 								dominant-baseline="middle"
 							>

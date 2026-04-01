@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { getContext } from 'svelte';
 	import DbmlCodeEditor from '$lib/components/DbmlCodeEditor.svelte';
 	import DbmlDiagram from '$lib/components/DbmlDiagram.svelte';
+	import DarkModeToggle from '$lib/components/DarkModeToggle.svelte';
 	import HelpTooltip from '$lib/components/HelpTooltip.svelte';
 
 	let fileInput = $state<HTMLInputElement>();
@@ -8,6 +10,8 @@
 	let content = $state('');
 	let savedContent = $state('');
 	let isEdited = $derived(content !== savedContent);
+
+	const theme = getContext<{ isDark: boolean; toggle: () => void }>('darkMode');
 
 	async function handleFileSelect(event: Event) {
 		const input = event.target as HTMLInputElement;
@@ -43,12 +47,17 @@
 </script>
 
 {#if !fileName}
-	<div class="flex h-screen flex-col items-center justify-center bg-gray-50">
-		<h1 class="mb-8 text-3xl font-bold text-gray-800">DBML Editor</h1>
+	<div class="flex h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-900">
+		<DarkModeToggle
+			isDark={theme.isDark}
+			onclick={theme.toggle}
+			class="absolute top-4 right-4 rounded-full p-2 text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700"
+		/>
+		<h1 class="mb-8 text-3xl font-bold text-gray-800 dark:text-gray-100">DBML Editor</h1>
 		<div
-			class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-white p-16"
+			class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-white p-16 dark:border-gray-600 dark:bg-gray-800"
 		>
-			<p class="mb-4 text-gray-600">DBMLファイルを選択してください</p>
+			<p class="mb-4 text-gray-600 dark:text-gray-300">DBMLファイルを選択してください</p>
 			<button
 				class="rounded-md bg-blue-600 px-6 py-2.5 text-white hover:bg-blue-700"
 				onclick={() => fileInput?.click()}
@@ -77,6 +86,11 @@
 				{/if}
 			</div>
 			<div class="flex items-center gap-2">
+				<DarkModeToggle
+					isDark={theme.isDark}
+					onclick={theme.toggle}
+					class="rounded p-1.5 text-gray-400 hover:bg-gray-700 hover:text-gray-200"
+				/>
 				<button
 					class="rounded px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-700"
 					onclick={openNewFile}
@@ -109,7 +123,7 @@
 
 			<!-- Diagram -->
 			<div class="h-full w-1/2">
-				<DbmlDiagram dbml={content} onchange={(v) => (content = v)} />
+				<DbmlDiagram dbml={content} onchange={(v) => (content = v)} darkMode={theme.isDark} />
 			</div>
 		</div>
 	</div>
