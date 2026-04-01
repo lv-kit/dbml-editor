@@ -38,10 +38,10 @@ export const actions: Actions = {
 			return fail(500, {
 				name: name,
 				slug: slug,
-				error: '組織の作成に失敗しました。スラッグが重複している可能性があります'
+				error: '組織の作成に失敗しました'
 			});
 		}
 
-		redirect(303, '/organizations');
+		throw redirect(303, '/organizations');
 	}
 };
