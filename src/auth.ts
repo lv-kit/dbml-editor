@@ -1,0 +1,93 @@
+import { env } from '$env/dynamic/private';
+import type { RequestEvent } from '@sveltejs/kit';
+import { SvelteKitAuth } from '@auth/sveltekit';
+import type { Provider, ProviderId } from '@auth/core/providers';
+import GitHub from '@auth/core/providers/github';
+import Google from '@auth/core/providers/google';
+import MicrosoftEntraID from '@auth/core/providers/microsoft-entra-id';
+
+type ProviderAvailability = { id: ProviderId; name: string; ready: boolean };
+
+type EnvSource = Record<string, string | undefined>;
+
+const providerDefinitions = [
+	{
+		id: 'github' as const satisfies ProviderId,
+		name: 'GitHub',
+		clientIdKey: 'GITHUB_ID',
+		clientSecretKey: 'GITHUB_SECRET',
+		create: (clientId: string, clientSecret: string) => GitHub({ clientId, clientSecret })
+	},
+	{
+		id: 'google' as const satisfies ProviderId,
+		name: 'Google',
+		clientIdKey: 'GOOGLE_CLIENT_ID',
+		clientSecretKey: 'GOOGLE_CLIENT_SECRET',
+		create: (clientId: string, clientSecret: string) => Google({ clientId, clientSecret })
+	},
+	{
+		id: 'microsoft-entra-id' as const satisfies ProviderId,
+		name: 'Microsoft',
+		clientIdKey: 'MICROSOFT_ENTRA_ID_CLIENT_ID',
+		clientSecretKey: 'MICROSOFT_ENTRA_ID_CLIENT_SECRET',
+		create: (clientId: string, clientSecret: string, source: EnvSource) =>
+			MicrosoftEntraID({
+				clientId,
+				clientSecret,
+				tenantId: source.MICROSOFT_ENTRA_ID_TENANT ?? 'common'
+			})
+	}
+] satisfies Array<{
+	id: ProviderId;
+	name: string;
+	clientIdKey: string;
+	clientSecretKey: string;
+	create: (clientId: string, clientSecret: string, source: EnvSource) => Provider;
+}>;
+
+function resolveEnv(source?: RequestEvent) {
+	return (source?.platform?.env as EnvSource | undefined) ?? env;
+}
+
+export function getProviderAvailability(event?: RequestEvent): ProviderAvailability[] {
+	const source = resolveEnv(event);
+
+	return providerDefinitions.map(({ id, name, clientIdKey, clientSecretKey }) => ({
+		id,
+		name,
+		ready: Boolean(source[clientIdKey] && source[clientSecretKey])
+	}));
+}
+
+function buildProviders(event?: RequestEvent) {
+	const source = resolveEnv(event);
+
+	return providerDefinitions
+		.map(({ clientIdKey, clientSecretKey, create }) => {
+			const clientId = source[clientIdKey];
+			const clientSecret = source[clientSecretKey];
+
+			if (!clientId || !clientSecret) return null;
+
+			return create(clientId, clientSecret, source);
+		})
+		.filter((provider): provider is Provider => Boolean(provider));
+}
+
+function resolveSecret(event?: RequestEvent) {
+	return resolveEnv(event).AUTH_SECRET ?? 'dev-secret';
+}
+
+function resolveTrustHost(event?: RequestEvent) {
+	return (resolveEnv(event).AUTH_TRUST_HOST ?? 'true') !== 'false';
+}
+
+export const { handle, signIn, signOut } = SvelteKitAuth(async (event) => {
+	const providers = buildProviders(event);
+
+	return {
+		providers,
+		secret: resolveSecret(event),
+		trustHost: resolveTrustHost(event)
+	};
+});
