@@ -83,7 +83,7 @@
 						class="flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-sm text-gray-800 shadow dark:bg-gray-800/80 dark:text-gray-100"
 					>
 						{#if userAvatar}
-							<img alt="profile" src={userAvatar} class="h-7 w-7 rounded-full object-cover" />
+							<img alt="" src={userAvatar} class="h-7 w-7 rounded-full object-cover" />
 						{/if}
 						<span class="max-w-[120px] truncate">{userName}</span>
 						<button
@@ -157,7 +157,7 @@
 				{#if session}
 					<div class="flex items-center gap-2 rounded bg-gray-700 px-2 py-1 text-xs text-gray-100">
 						{#if userAvatar}
-							<img alt="profile" src={userAvatar} class="h-7 w-7 rounded-full object-cover" />
+							<img alt="" src={userAvatar} class="h-7 w-7 rounded-full object-cover" />
 						{/if}
 						<span class="max-w-[140px] truncate">{userName}</span>
 						<button

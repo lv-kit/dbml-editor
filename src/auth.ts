@@ -75,11 +75,22 @@ function buildProviders(event?: RequestEvent) {
 }
 
 function resolveSecret(event?: RequestEvent) {
-	return resolveEnv(event).AUTH_SECRET ?? 'dev-secret';
+	const source = resolveEnv(event);
+	if (source.AUTH_SECRET) return source.AUTH_SECRET;
+	if (source.NODE_ENV === 'production') {
+		throw new Error('AUTH_SECRET must be set in production');
+	}
+	return 'dev-secret';
 }
 
 function resolveTrustHost(event?: RequestEvent) {
-	return (resolveEnv(event).AUTH_TRUST_HOST ?? 'true') !== 'false';
+	const source = resolveEnv(event);
+	const trustHost = source.AUTH_TRUST_HOST;
+
+	if (trustHost === 'true') return true;
+	if (trustHost === 'false') return false;
+
+	return source.NODE_ENV !== 'production';
 }
 
 export const { handle, signIn, signOut } = SvelteKitAuth(async (event) => {
