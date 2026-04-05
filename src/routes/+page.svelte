@@ -63,7 +63,7 @@
 				onchange={handleFileSelect}
 			/>
 		</div>
-		<a href="/organizations" class="mt-6 text-sm text-gray-500 hover:text-gray-700"> 組織を管理 </a>
+		<a href="/signup" class="mt-6 text-sm text-gray-500 hover:text-gray-700"> サインアップ </a>
 	</div>
 {:else}
 	<div class="flex h-screen flex-col">
