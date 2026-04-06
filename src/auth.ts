@@ -113,7 +113,7 @@ function resolveTrustHost(event?: RequestEvent) {
 	return source.NODE_ENV !== 'production';
 }
 
-export const { handle, signIn, signOut } = SvelteKitAuth(async (event) => {
+export const { handle, signIn, signOut} = SvelteKitAuth(async (event) => {
 	const providers = buildProviders(event);
 
 	return {
@@ -121,11 +121,11 @@ export const { handle, signIn, signOut } = SvelteKitAuth(async (event) => {
 		secret: resolveSecret(event),
 		trustHost: resolveTrustHost(event),
 		callbacks: {
-			async signIn({ user: authUser }) {
+			async signIn({ user: authUser }: any) {
 				// Allow sign in if user has email
 				return Boolean(authUser?.email);
 			},
-			async redirect({ url, baseUrl }) {
+			async redirect({ url, baseUrl }: any) {
 				// If callback URL is provided, use it
 				if (url.startsWith(baseUrl)) return url;
 				// Otherwise redirect to signup flow
