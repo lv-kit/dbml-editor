@@ -37,7 +37,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	}
 
 	// Enforce org membership — only members of this org can view details
-	if (currentUser.organizationId !== org.id) {
+	if (!currentUser.organizationId || currentUser.organizationId !== org.id) {
 		throw redirect(303, '/organizations');
 	}
 
