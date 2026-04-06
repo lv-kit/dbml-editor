@@ -118,7 +118,13 @@
 		<p class="mb-8 text-gray-500">DBMLスキーマの作成方法を選択してください</p>
 
 		<div class="flex gap-6">
-			<button onclick={startNew} class="w-56 text-left">
+			<div
+				role="button"
+				tabindex="0"
+				onclick={startNew}
+				onkeydown={(e) => e.key === 'Enter' && startNew()}
+				class="w-56 cursor-pointer text-left"
+			>
 				<Card class="h-full border-2 transition hover:border-blue-400 hover:shadow-md">
 					<CardContent class="flex flex-col items-center p-8">
 						<span class="mb-4 text-4xl">📝</span>
@@ -128,9 +134,11 @@
 						</span>
 					</CardContent>
 				</Card>
-			</button>
+			</div>
 
-			<button
+			<div
+				role="button"
+				tabindex="0"
 				onclick={() => {
 					if (isFileSystemAccessSupported()) {
 						handleFileSelectWithApi();
@@ -138,7 +146,16 @@
 						fileInput?.click();
 					}
 				}}
-				class="w-56 text-left"
+				onkeydown={(e) => {
+					if (e.key === 'Enter') {
+						if (isFileSystemAccessSupported()) {
+							handleFileSelectWithApi();
+						} else {
+							fileInput?.click();
+						}
+					}
+				}}
+				class="w-56 cursor-pointer text-left"
 			>
 				<Card class="h-full border-2 transition hover:border-blue-400 hover:shadow-md">
 					<CardContent class="flex flex-col items-center p-8">
@@ -149,7 +166,7 @@
 						</span>
 					</CardContent>
 				</Card>
-			</button>
+			</div>
 			<input
 				bind:this={fileInput}
 				type="file"

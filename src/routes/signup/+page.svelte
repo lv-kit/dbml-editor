@@ -16,7 +16,13 @@
 	<p class="mb-10 text-gray-500">ご利用形態を選択してください</p>
 
 	<div class="flex gap-6">
-		<button onclick={selectPersonal} class="w-64 text-left">
+		<div
+			role="button"
+			tabindex="0"
+			onclick={selectPersonal}
+			onkeydown={(e) => e.key === 'Enter' && selectPersonal()}
+			class="w-64 cursor-pointer text-left"
+		>
 			<Card class="h-full border-2 transition hover:border-blue-500 hover:shadow-md">
 				<CardContent class="flex flex-col items-center p-8">
 					<span class="mb-3 text-4xl">👤</span>
@@ -26,9 +32,15 @@
 					</span>
 				</CardContent>
 			</Card>
-		</button>
+		</div>
 
-		<button onclick={selectCorporate} class="w-64 text-left">
+		<div
+			role="button"
+			tabindex="0"
+			onclick={selectCorporate}
+			onkeydown={(e) => e.key === 'Enter' && selectCorporate()}
+			class="w-64 cursor-pointer text-left"
+		>
 			<Card class="h-full border-2 transition hover:border-blue-500 hover:shadow-md">
 				<CardContent class="flex flex-col items-center p-8">
 					<span class="mb-3 text-4xl">🏢</span>
@@ -38,6 +50,6 @@
 					</span>
 				</CardContent>
 			</Card>
-		</button>
+		</div>
 	</div>
 </div>
