@@ -130,7 +130,8 @@ export const actions: Actions = {
 				currentUser.role as MemberRole,
 				targetUser.role as MemberRole,
 				newRole as MemberRole
-			)
+			) ||
+			!canAssignRole(currentUser.role as MemberRole, newRole as MemberRole)
 		) {
 			return fail(403, { error: '権限を変更する権限がありません' });
 		}

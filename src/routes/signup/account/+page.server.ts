@@ -64,7 +64,7 @@ export const actions: Actions = {
 					});
 				}
 				const [existingOwner] = await db
-					.select()
+					.select({ id: user.id })
 					.from(user)
 					.where(and(eq(user.organizationId, orgId), eq(user.role, 'owner')));
 				role = existingOwner ? 'member' : 'owner';
