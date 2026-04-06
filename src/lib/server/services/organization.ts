@@ -1,8 +1,6 @@
 import { eq, and, isNull } from 'drizzle-orm';
 import { organization, user, project } from '$lib/server/db/schema';
-import type { db as dbType } from '$lib/server/db';
-
-type DbClient = typeof dbType;
+import type { DbClient } from '$lib/server/db';
 
 export type OrganizationRole = 'owner' | 'admin';
 
@@ -151,9 +149,7 @@ export async function deleteOrganization(
 
 	// Soft delete all projects belonging to users in this organization
 	const orgUsers = await repo.findUserIdsByOrganization(organizationId);
-	for (const orgUser of orgUsers) {
-		await repo.softDeleteProjectsByUserId(orgUser.id, now);
-	}
+	await Promise.all(orgUsers.map((orgUser) => repo.softDeleteProjectsByUserId(orgUser.id, now)));
 
 	// Soft delete the organization
 	await repo.softDeleteOrganization(organizationId, now);

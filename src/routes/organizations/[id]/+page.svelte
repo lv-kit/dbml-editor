@@ -51,7 +51,6 @@
 			<div class="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
 				<h2 class="mb-4 text-lg font-semibold text-gray-800">管理者を追加</h2>
 				<form method="POST" action="?/addAdmin" class="flex gap-3">
-					<input type="hidden" name="userId" value={data.userId} />
 					<input
 						type="email"
 						name="email"
@@ -76,7 +75,6 @@
 					この操作は元に戻せません。組織に紐づくすべてのプロジェクトも削除されます。
 				</p>
 				<form method="POST" action="?/delete">
-					<input type="hidden" name="userId" value={data.userId} />
 					<button
 						type="submit"
 						class="rounded-md bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"

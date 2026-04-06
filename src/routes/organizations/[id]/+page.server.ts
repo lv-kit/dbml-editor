@@ -9,9 +9,21 @@ import {
 } from '$lib/server/services/organization';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ params, url }) => {
-	const userId = url.searchParams.get('userId');
-	if (!userId) {
+async function getCurrentUser(event: { locals: App.Locals }) {
+	const session = await event.locals.auth();
+	if (!session?.user?.email) {
+		return undefined;
+	}
+	const [currentUser] = await db
+		.select({ id: user.id, role: user.role })
+		.from(user)
+		.where(eq(user.email, session.user.email));
+	return currentUser;
+}
+
+export const load: PageServerLoad = async ({ params, locals }) => {
+	const currentUser = await getCurrentUser({ locals });
+	if (!currentUser) {
 		throw redirect(303, '/signup');
 	}
 
@@ -29,23 +41,18 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		.from(user)
 		.where(eq(user.organizationId, org.id));
 
-	const [currentUser] = await db
-		.select({ id: user.id, role: user.role })
-		.from(user)
-		.where(eq(user.id, Number(userId)));
-
-	return { organization: org, members, currentUser, userId };
+	return { organization: org, members, currentUser };
 };
 
 export const actions: Actions = {
-	addAdmin: async ({ request, params }) => {
-		const data = await request.formData();
-		const userId = data.get('userId');
-		const email = data.get('email');
-
-		if (!userId || typeof userId !== 'string') {
-			return fail(400, { error: '無効なユーザーです' });
+	addAdmin: async ({ request, params, locals }) => {
+		const currentUser = await getCurrentUser({ locals });
+		if (!currentUser) {
+			return fail(401, { error: '認証が必要です' });
 		}
+
+		const data = await request.formData();
+		const email = data.get('email');
 
 		if (!email || typeof email !== 'string' || email.trim() === '') {
 			return fail(400, { error: 'メールアドレスを入力してください' });
@@ -54,7 +61,7 @@ export const actions: Actions = {
 		const repo = createOrganizationRepository(db);
 		const result = await addOrganizationAdmin(repo, {
 			organizationId: Number(params.id),
-			requestingUserId: Number(userId),
+			requestingUserId: currentUser.id,
 			targetUserEmail: email.trim()
 		});
 
@@ -65,24 +72,22 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	delete: async ({ request, params }) => {
-		const data = await request.formData();
-		const userId = data.get('userId');
-
-		if (!userId || typeof userId !== 'string') {
-			return fail(400, { error: '無効なユーザーです' });
+	delete: async ({ params, locals }) => {
+		const currentUser = await getCurrentUser({ locals });
+		if (!currentUser) {
+			return fail(401, { error: '認証が必要です' });
 		}
 
 		const repo = createOrganizationRepository(db);
 		const result = await deleteOrganization(repo, {
 			organizationId: Number(params.id),
-			requestingUserId: Number(userId)
+			requestingUserId: currentUser.id
 		});
 
 		if (!result.success) {
 			return fail(400, { error: result.error });
 		}
 
-		throw redirect(303, `/organizations?userId=${userId}`);
+		throw redirect(303, '/organizations');
 	}
 };
