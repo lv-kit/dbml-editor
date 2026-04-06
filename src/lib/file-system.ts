@@ -16,7 +16,7 @@ export function isFileSystemAccessSupported(): boolean {
 
 export async function openDbmlFile(): Promise<FileOpenResult> {
 	if (!isFileSystemAccessSupported()) {
-		throw new Error('File System Access API is not supported in this environment');
+		throw new Error('このブラウザではFile System Access APIがサポートされていません');
 	}
 
 	const [handle] = await window.showOpenFilePicker({

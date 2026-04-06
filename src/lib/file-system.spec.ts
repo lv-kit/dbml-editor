@@ -23,7 +23,7 @@ describe('openDbmlFile', () => {
 
 	it('throws when File System Access API is not supported', async () => {
 		await expect(openDbmlFile()).rejects.toThrow(
-			'File System Access API is not supported in this environment'
+			'このブラウザではFile System Access APIがサポートされていません'
 		);
 	});
 

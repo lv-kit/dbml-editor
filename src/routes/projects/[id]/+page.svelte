@@ -2,7 +2,7 @@
 	import DbmlCodeEditor from '$lib/components/DbmlCodeEditor.svelte';
 	import DbmlDiagram from '$lib/components/DbmlDiagram.svelte';
 	import HelpTooltip from '$lib/components/HelpTooltip.svelte';
-	import { validateDbml } from '$lib/dbml-validator';
+	import { validateDbml, type ValidationResult } from '$lib/dbml-validator';
 	import { isFileSystemAccessSupported, openDbmlFile, writeToFileHandle } from '$lib/file-system';
 
 	let { data } = $props();
@@ -16,7 +16,8 @@
 	let fileHandle = $state<FileSystemFileHandle | null>(null);
 	let isOverwriting = $state(false);
 
-	let validation = $derived(fileHandle ? validateDbml(content) : { valid: true, error: null });
+	const NO_VALIDATION: ValidationResult = { valid: true, error: null };
+	let validation = $derived(fileHandle ? validateDbml(content) : NO_VALIDATION);
 
 	$effect(() => {
 		content = data.project.dbmlContent;
