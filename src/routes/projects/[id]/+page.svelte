@@ -15,6 +15,7 @@
 	let fileInput = $state<HTMLInputElement>();
 	let fileHandle = $state<FileSystemFileHandle | null>(null);
 	let isOverwriting = $state(false);
+	let overwriteError = $state<string | null>(null);
 
 	const NO_VALIDATION: ValidationResult = { valid: true, error: null };
 	let validation = $derived(fileHandle ? validateDbml(content) : NO_VALIDATION);
@@ -78,9 +79,12 @@
 	async function overwriteLocalFile() {
 		if (!fileHandle || !validation.valid) return;
 		isOverwriting = true;
+		overwriteError = null;
 		try {
 			await writeToFileHandle(fileHandle, content);
 		} catch (e) {
+			const message = e instanceof Error ? e.message : '不明なエラー';
+			overwriteError = `ファイル上書きに失敗しました: ${message}`;
 			console.error('ファイル上書きに失敗しました:', e);
 		} finally {
 			isOverwriting = false;
@@ -196,6 +200,22 @@
 				<HelpTooltip />
 			</div>
 		</header>
+
+		{#if overwriteError}
+			<div
+				class="flex items-center justify-between bg-red-600 px-4 py-2 text-sm text-white"
+				role="alert"
+			>
+				<span>{overwriteError}</span>
+				<button
+					onclick={() => (overwriteError = null)}
+					class="ml-4 text-white hover:text-red-200"
+					aria-label="エラーを閉じる"
+				>
+					✕
+				</button>
+			</div>
+		{/if}
 
 		<!-- Editor + Diagram split -->
 		<div class="flex flex-1 overflow-hidden">
