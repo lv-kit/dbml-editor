@@ -206,7 +206,7 @@ export const actions: Actions = {
 			await db
 				.update(user)
 				.set({ deletedAt: new Date() })
-				.where(eq(user.id, Number(targetUserId)));
+				.where(and(eq(user.id, Number(targetUserId)), isNull(user.deletedAt)));
 		} catch {
 			return fail(500, { error: 'メンバーの削除に失敗しました' });
 		}
