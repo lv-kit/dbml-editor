@@ -1,5 +1,10 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Button } from '$lib/components/ui/button';
+	import { Card, CardContent } from '$lib/components/ui/card';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 
 	let { form } = $props();
 
@@ -44,55 +49,53 @@
 			<p class="mt-1 text-sm text-gray-500">組織の情報を入力してください</p>
 		</div>
 
-		<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-			{#if form?.error}
-				<div class="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
-					{form.error}
-				</div>
-			{/if}
+		<Card>
+			<CardContent class="p-6">
+				{#if form?.error}
+					<Alert variant="destructive" class="mb-4">
+						<AlertDescription>{form.error}</AlertDescription>
+					</Alert>
+				{/if}
 
-			<form method="POST" use:enhance>
-				<div class="mb-4">
-					<label for="name" class="mb-1 block text-sm font-medium text-gray-700">
-						組織名 <span class="text-red-500">*</span>
-					</label>
-					<input
-						id="name"
-						name="name"
-						type="text"
-						value={nameInput}
-						oninput={onNameInput}
-						required
-						placeholder="例: Acme Corporation"
-						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-					/>
-				</div>
+				<form method="POST" use:enhance>
+					<div class="mb-4">
+						<Label for="name" class="mb-1 block">
+							組織名 <span class="text-red-500">*</span>
+						</Label>
+						<Input
+							id="name"
+							name="name"
+							type="text"
+							value={nameInput}
+							oninput={onNameInput}
+							required
+							placeholder="例: Acme Corporation"
+						/>
+					</div>
 
-				<div class="mb-6">
-					<label for="slug" class="mb-1 block text-sm font-medium text-gray-700">
-						スラッグ <span class="text-red-500">*</span>
-					</label>
-					<input
-						id="slug"
-						name="slug"
-						type="text"
-						value={slug}
-						oninput={onSlugInput}
-						required
-						placeholder="例: acme-corporation"
-						class="w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-sm focus:border-blue-500 focus:outline-none"
-					/>
-					<p class="mt-1 text-xs text-gray-400">半角英数字とハイフンのみ使用できます</p>
-				</div>
+					<div class="mb-6">
+						<Label for="slug" class="mb-1 block">
+							スラッグ <span class="text-red-500">*</span>
+						</Label>
+						<Input
+							id="slug"
+							name="slug"
+							type="text"
+							value={slug}
+							oninput={onSlugInput}
+							required
+							placeholder="例: acme-corporation"
+							class="font-mono"
+						/>
+						<p class="mt-1 text-xs text-gray-400">半角英数字とハイフンのみ使用できます</p>
+					</div>
 
-				<button
-					type="submit"
-					class="w-full rounded-md bg-blue-600 px-6 py-2.5 text-sm text-white hover:bg-blue-700"
-				>
-					次へ
-				</button>
-			</form>
-		</div>
+					<Button type="submit" class="w-full">
+						次へ
+					</Button>
+				</form>
+			</CardContent>
+		</Card>
 
 		<div class="mt-4 flex justify-center">
 			<div class="flex items-center gap-2 text-xs text-gray-400">

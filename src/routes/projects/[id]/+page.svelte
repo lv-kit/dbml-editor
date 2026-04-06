@@ -14,6 +14,11 @@
 	let hasStarted = $state(false);
 	let fileInput = $state<HTMLInputElement>();
 	let fileHandle = $state<FileSystemFileHandle | null>(null);
+	import { Button } from '$lib/components/ui/button';
+	import { Card, CardContent } from '$lib/components/ui/card';
+	import { Alert, AlertDescription } from '$lib/components/ui/alert';
+	import { Badge } from '$lib/components/ui/badge';
+
 	let isOverwriting = $state(false);
 	let overwriteError = $state<string | null>(null);
 
@@ -113,15 +118,16 @@
 		<p class="mb-8 text-gray-500">DBMLスキーマの作成方法を選択してください</p>
 
 		<div class="flex gap-6">
-			<button
-				onclick={startNew}
-				class="flex w-56 flex-col items-center rounded-lg border-2 border-gray-200 bg-white p-8 shadow-sm transition hover:border-blue-400 hover:shadow-md"
-			>
-				<span class="mb-4 text-4xl">📝</span>
-				<span class="mb-2 text-lg font-semibold text-gray-800">新規作成</span>
-				<span class="text-center text-sm text-gray-500">
-					テンプレートから<br />新しいスキーマを作成
-				</span>
+			<button onclick={startNew} class="w-56 text-left">
+				<Card class="h-full border-2 transition hover:border-blue-400 hover:shadow-md">
+					<CardContent class="flex flex-col items-center p-8">
+						<span class="mb-4 text-4xl">📝</span>
+						<span class="mb-2 text-lg font-semibold text-gray-800">新規作成</span>
+						<span class="text-center text-sm text-gray-500">
+							テンプレートから<br />新しいスキーマを作成
+						</span>
+					</CardContent>
+				</Card>
 			</button>
 
 			<button
@@ -132,13 +138,17 @@
 						fileInput?.click();
 					}
 				}}
-				class="flex w-56 flex-col items-center rounded-lg border-2 border-gray-200 bg-white p-8 shadow-sm transition hover:border-blue-400 hover:shadow-md"
+				class="w-56 text-left"
 			>
-				<span class="mb-4 text-4xl">📂</span>
-				<span class="mb-2 text-lg font-semibold text-gray-800">ファイル選択</span>
-				<span class="text-center text-sm text-gray-500">
-					既存のDBMLファイルを<br />読み込んで編集
-				</span>
+				<Card class="h-full border-2 transition hover:border-blue-400 hover:shadow-md">
+					<CardContent class="flex flex-col items-center p-8">
+						<span class="mb-4 text-4xl">📂</span>
+						<span class="mb-2 text-lg font-semibold text-gray-800">ファイル選択</span>
+						<span class="text-center text-sm text-gray-500">
+							既存のDBMLファイルを<br />読み込んで編集
+						</span>
+					</CardContent>
+				</Card>
 			</button>
 			<input
 				bind:this={fileInput}
@@ -162,22 +172,24 @@
 				<span class="text-gray-600">|</span>
 				<span class="text-sm font-medium text-gray-200">{data.project.name}</span>
 				{#if isEdited}
-					<span class="rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs text-yellow-300">
+					<Badge variant="outline" class="border-yellow-500/30 bg-yellow-500/20 text-yellow-300">
 						未保存
-					</span>
+					</Badge>
 				{/if}
 			</div>
 			<div class="flex items-center gap-2">
-				<button
-					class="rounded bg-green-600 px-3 py-1.5 text-sm text-white hover:bg-green-700 disabled:opacity-40"
+				<Button
+					class="bg-green-600 hover:bg-green-700"
+					size="sm"
 					onclick={save}
 					disabled={!isEdited || isSaving}
 				>
 					{isSaving ? '保存中...' : '保存'}
-				</button>
+				</Button>
 				{#if fileHandle}
-					<button
-						class="rounded bg-orange-600 px-3 py-1.5 text-sm text-white hover:bg-orange-700 disabled:opacity-40"
+					<Button
+						class="bg-orange-600 hover:bg-orange-700"
+						size="sm"
 						onclick={overwriteLocalFile}
 						disabled={!validation.valid || isOverwriting}
 						title={validation.error
@@ -189,14 +201,11 @@
 						data-testid="overwrite-button"
 					>
 						{isOverwriting ? '上書き中...' : 'ファイル上書き'}
-					</button>
+					</Button>
 				{/if}
-				<button
-					class="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
-					onclick={download}
-				>
+				<Button size="sm" onclick={download}>
 					ダウンロード
-				</button>
+				</Button>
 				<HelpTooltip />
 			</div>
 		</header>
