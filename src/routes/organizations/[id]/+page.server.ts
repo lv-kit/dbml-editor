@@ -24,10 +24,13 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		throw redirect(303, '/organizations');
 	}
 
-	const members = await db.select().from(user).where(eq(user.organizationId, org.id));
+	const members = await db
+		.select({ id: user.id, name: user.name, email: user.email, role: user.role })
+		.from(user)
+		.where(eq(user.organizationId, org.id));
 
 	const [currentUser] = await db
-		.select()
+		.select({ id: user.id, role: user.role })
 		.from(user)
 		.where(eq(user.id, Number(userId)));
 

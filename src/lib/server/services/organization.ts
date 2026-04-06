@@ -26,7 +26,9 @@ export interface OrganizationRepository {
 		userId: number,
 		organizationId: number
 	): Promise<{ id: number; role: string | null } | undefined>;
-	findUserByEmail(email: string): Promise<{ id: number } | undefined>;
+	findUserByEmail(
+		email: string
+	): Promise<{ id: number; organizationId: number | null } | undefined>;
 	updateUserRole(userId: number, role: string, organizationId: number): Promise<void>;
 	findUserIdsByOrganization(organizationId: number): Promise<{ id: number }[]>;
 	softDeleteProjectsByUserId(userId: number, deletedAt: Date): Promise<void>;
@@ -53,7 +55,10 @@ export function createOrganizationRepository(db: DbClient): OrganizationReposito
 			return u;
 		},
 		async findUserByEmail(email: string) {
-			const [u] = await db.select({ id: user.id }).from(user).where(eq(user.email, email));
+			const [u] = await db
+				.select({ id: user.id, organizationId: user.organizationId })
+				.from(user)
+				.where(eq(user.email, email));
 			return u;
 		},
 		async updateUserRole(userId: number, role: string, organizationId: number) {
@@ -104,6 +109,11 @@ export async function addOrganizationAdmin(
 	const targetUser = await repo.findUserByEmail(targetUserEmail);
 	if (!targetUser) {
 		return { success: false, error: '指定されたメールアドレスのユーザーが見つかりません' };
+	}
+
+	// Prevent moving users from another organization
+	if (targetUser.organizationId && targetUser.organizationId !== organizationId) {
+		return { success: false, error: 'このユーザーは別の組織に所属しています' };
 	}
 
 	// Update target user's role and organization

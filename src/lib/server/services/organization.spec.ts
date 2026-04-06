@@ -121,7 +121,7 @@ describe('addOrganizationAdmin', () => {
 		const repo = createMockRepo({
 			findOrganizationById: vi.fn().mockResolvedValue({ id: 1 }),
 			findUserInOrganization: vi.fn().mockResolvedValue({ id: 1, role: 'owner' }),
-			findUserByEmail: vi.fn().mockResolvedValue({ id: 2 })
+			findUserByEmail: vi.fn().mockResolvedValue({ id: 2, organizationId: null })
 		});
 
 		const result = await addOrganizationAdmin(repo, {
@@ -138,7 +138,7 @@ describe('addOrganizationAdmin', () => {
 		const repo = createMockRepo({
 			findOrganizationById: vi.fn().mockResolvedValue({ id: 1 }),
 			findUserInOrganization: vi.fn().mockResolvedValue({ id: 1, role: 'admin' }),
-			findUserByEmail: vi.fn().mockResolvedValue({ id: 3 })
+			findUserByEmail: vi.fn().mockResolvedValue({ id: 3, organizationId: null })
 		});
 
 		const result = await addOrganizationAdmin(repo, {
@@ -149,6 +149,40 @@ describe('addOrganizationAdmin', () => {
 
 		expect(result.success).toBe(true);
 		expect(repo.updateUserRole).toHaveBeenCalledWith(3, 'admin', 1);
+	});
+
+	it('should fail when target user belongs to another organization', async () => {
+		const repo = createMockRepo({
+			findOrganizationById: vi.fn().mockResolvedValue({ id: 1 }),
+			findUserInOrganization: vi.fn().mockResolvedValue({ id: 1, role: 'owner' }),
+			findUserByEmail: vi.fn().mockResolvedValue({ id: 2, organizationId: 99 })
+		});
+
+		const result = await addOrganizationAdmin(repo, {
+			organizationId: 1,
+			requestingUserId: 1,
+			targetUserEmail: 'other-org@example.com'
+		});
+
+		expect(result.success).toBe(false);
+		expect(result.error).toBe('このユーザーは別の組織に所属しています');
+	});
+
+	it('should succeed when target user already belongs to the same organization', async () => {
+		const repo = createMockRepo({
+			findOrganizationById: vi.fn().mockResolvedValue({ id: 1 }),
+			findUserInOrganization: vi.fn().mockResolvedValue({ id: 1, role: 'owner' }),
+			findUserByEmail: vi.fn().mockResolvedValue({ id: 2, organizationId: 1 })
+		});
+
+		const result = await addOrganizationAdmin(repo, {
+			organizationId: 1,
+			requestingUserId: 1,
+			targetUserEmail: 'same-org@example.com'
+		});
+
+		expect(result.success).toBe(true);
+		expect(repo.updateUserRole).toHaveBeenCalledWith(2, 'admin', 1);
 	});
 });
 
