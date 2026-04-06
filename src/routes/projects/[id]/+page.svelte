@@ -6,7 +6,6 @@
 	import { isFileSystemAccessSupported, openDbmlFile, writeToFileHandle } from '$lib/file-system';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent } from '$lib/components/ui/card';
-	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import { Badge } from '$lib/components/ui/badge';
 
 	let { data } = $props();
@@ -66,6 +65,25 @@
 			handleFileSelectWithApi();
 		} else {
 			fileInput?.click();
+		}
+	}
+
+	function handleOptionKeydown(event: KeyboardEvent, action: () => void) {
+		if (event.key === 'Enter') {
+			event.preventDefault();
+			action();
+			return;
+		}
+
+		if (event.key === ' ') {
+			event.preventDefault();
+		}
+	}
+
+	function handleOptionKeyup(event: KeyboardEvent, action: () => void) {
+		if (event.key === ' ') {
+			event.preventDefault();
+			action();
 		}
 	}
 
@@ -130,13 +148,9 @@
 				role="button"
 				tabindex="0"
 				onclick={startNew}
-				onkeydown={(e) => {
-					if (e.key === 'Enter' || e.key === ' ') {
-						e.preventDefault();
-						startNew();
-					}
-				}}
-				class="w-56 cursor-pointer text-left"
+				onkeydown={(e) => handleOptionKeydown(e, startNew)}
+				onkeyup={(e) => handleOptionKeyup(e, startNew)}
+				class="w-56 cursor-pointer rounded-xl text-left focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:outline-none"
 			>
 				<Card class="h-full border-2 transition hover:border-blue-400 hover:shadow-md">
 					<CardContent class="flex flex-col items-center p-8">
@@ -153,13 +167,9 @@
 				role="button"
 				tabindex="0"
 				onclick={selectFile}
-				onkeydown={(e) => {
-					if (e.key === 'Enter' || e.key === ' ') {
-						e.preventDefault();
-						selectFile();
-					}
-				}}
-				class="w-56 cursor-pointer text-left"
+				onkeydown={(e) => handleOptionKeydown(e, selectFile)}
+				onkeyup={(e) => handleOptionKeyup(e, selectFile)}
+				class="w-56 cursor-pointer rounded-xl text-left focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:outline-none"
 			>
 				<Card class="h-full border-2 transition hover:border-blue-400 hover:shadow-md">
 					<CardContent class="flex flex-col items-center p-8">
@@ -224,9 +234,7 @@
 						{isOverwriting ? '上書き中...' : 'ファイル上書き'}
 					</Button>
 				{/if}
-				<Button size="sm" onclick={download}>
-					ダウンロード
-				</Button>
+				<Button size="sm" onclick={download}>ダウンロード</Button>
 				<HelpTooltip />
 			</div>
 		</header>

@@ -9,6 +9,25 @@
 	function selectCorporate() {
 		goto('/signup/organization');
 	}
+
+	function handleOptionKeydown(event: KeyboardEvent, action: () => void) {
+		if (event.key === 'Enter') {
+			event.preventDefault();
+			action();
+			return;
+		}
+
+		if (event.key === ' ') {
+			event.preventDefault();
+		}
+	}
+
+	function handleOptionKeyup(event: KeyboardEvent, action: () => void) {
+		if (event.key === ' ') {
+			event.preventDefault();
+			action();
+		}
+	}
 </script>
 
 <div class="flex min-h-screen flex-col items-center justify-center bg-gray-50">
@@ -20,13 +39,9 @@
 			role="button"
 			tabindex="0"
 			onclick={selectPersonal}
-			onkeydown={(e) => {
-				if (e.key === 'Enter' || e.key === ' ') {
-					e.preventDefault();
-					selectPersonal();
-				}
-			}}
-			class="w-64 cursor-pointer text-left"
+			onkeydown={(e) => handleOptionKeydown(e, selectPersonal)}
+			onkeyup={(e) => handleOptionKeyup(e, selectPersonal)}
+			class="w-64 cursor-pointer rounded-xl text-left focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:outline-none"
 		>
 			<Card class="h-full border-2 transition hover:border-blue-500 hover:shadow-md">
 				<CardContent class="flex flex-col items-center p-8">
@@ -43,13 +58,9 @@
 			role="button"
 			tabindex="0"
 			onclick={selectCorporate}
-			onkeydown={(e) => {
-				if (e.key === 'Enter' || e.key === ' ') {
-					e.preventDefault();
-					selectCorporate();
-				}
-			}}
-			class="w-64 cursor-pointer text-left"
+			onkeydown={(e) => handleOptionKeydown(e, selectCorporate)}
+			onkeyup={(e) => handleOptionKeyup(e, selectCorporate)}
+			class="w-64 cursor-pointer rounded-xl text-left focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:outline-none"
 		>
 			<Card class="h-full border-2 transition hover:border-blue-500 hover:shadow-md">
 				<CardContent class="flex flex-col items-center p-8">
