@@ -80,9 +80,9 @@
 				{#each data.projects as proj}
 					<a
 						href="/projects/{proj.id}?userId={data.user.id}"
-						class="transition hover:border-blue-300 hover:shadow-md"
+						class="block"
 					>
-						<Card class="h-full">
+						<Card class="h-full transition hover:border-blue-300 hover:shadow-md">
 							<CardContent class="p-5">
 								<h2 class="font-medium text-gray-800">{proj.name}</h2>
 								<p class="mt-1 text-xs text-gray-400">

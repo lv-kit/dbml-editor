@@ -7,7 +7,7 @@
 		class: className,
 		children,
 		...restProps
-	}: HTMLAttributes<HTMLParagraphElement> & { children?: Snippet } = $props();
+	}: HTMLAttributes<HTMLDivElement> & { children?: Snippet } = $props();
 </script>
 
 <div class={cn('text-sm [&_p]:leading-relaxed', className)} {...restProps}>

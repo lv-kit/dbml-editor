@@ -205,9 +205,9 @@
 											<span class="ml-1 text-xs text-gray-400">(自分)</span>
 										{/if}
 									</TableCell>
-									<TableCell class="px-5 py-3 text-gray-600 dark:text-gray-400"
-										>{member.email}</TableCell
-									>
+									<TableCell class="px-5 py-3 text-gray-600 dark:text-gray-400">
+										{member.email}
+									</TableCell>
 									<TableCell class="px-5 py-3">
 										{#if isManager && canEditMemberRole(currentUserRole, member.role as MemberRole)}
 											<form method="POST" action="?/updateRole" use:enhance class="inline">
