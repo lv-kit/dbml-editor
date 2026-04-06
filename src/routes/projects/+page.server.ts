@@ -1,6 +1,6 @@
 import { db } from '$lib/server/db';
 import { project, user } from '$lib/server/db/schema';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq, isNull } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -21,7 +21,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	const projects = await db
 		.select()
 		.from(project)
-		.where(eq(project.userId, currentUser.id))
+		.where(and(eq(project.userId, currentUser.id), isNull(project.deletedAt)))
 		.orderBy(asc(project.createdAt));
 
 	return { user: currentUser, projects };

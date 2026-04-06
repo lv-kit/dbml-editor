@@ -45,6 +45,14 @@ export const actions: Actions = {
 		}
 
 		let userId: number;
+		const orgId = organizationId ? Number(organizationId) : null;
+		if (orgId !== null && (!Number.isInteger(orgId) || orgId <= 0)) {
+			return fail(400, {
+				name: name,
+				email: email,
+				error: '無効な組織IDです'
+			});
+		}
 		try {
 			const [inserted] = await db
 				.insert(user)
@@ -52,7 +60,8 @@ export const actions: Actions = {
 					name: name.trim(),
 					email: email.trim(),
 					userType: typeof userType === 'string' ? userType : 'personal',
-					organizationId: organizationId ? Number(organizationId) : null
+					role: orgId ? 'owner' : null,
+					organizationId: orgId
 				})
 				.returning({ id: user.id });
 			userId = inserted.id;

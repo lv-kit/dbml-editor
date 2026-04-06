@@ -1,8 +1,12 @@
 import { db } from '$lib/server/db';
 import { organization } from '$lib/server/db/schema';
-import { asc } from 'drizzle-orm';
+import { asc, isNull } from 'drizzle-orm';
 
 export async function load() {
-	const organizations = await db.select().from(organization).orderBy(asc(organization.createdAt));
+	const organizations = await db
+		.select()
+		.from(organization)
+		.where(isNull(organization.deletedAt))
+		.orderBy(asc(organization.createdAt));
 	return { organizations };
 }
