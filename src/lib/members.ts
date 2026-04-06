@@ -47,6 +47,14 @@ export function canEditMemberRole(
 	return false;
 }
 
+export function canAssignRole(requestingUserRole: MemberRole, roleToAssign: MemberRole): boolean {
+	if (!canManageMembers(requestingUserRole)) return false;
+	if (requestingUserRole === 'owner') return true;
+	// admin cannot assign owner role
+	if (requestingUserRole === 'admin') return roleToAssign !== 'owner';
+	return false;
+}
+
 export function validateEmail(email: string): boolean {
 	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }

@@ -99,8 +99,6 @@
 									};
 								}}
 							>
-								<input type="hidden" name="currentUserId" value={data.currentUser?.id ?? ''} />
-
 								<div class="mb-3">
 									<label for="name" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
 										名前 <span class="text-red-500">*</span>
@@ -227,7 +225,6 @@
 									<td class="px-5 py-3 text-sm">
 										{#if isManager && canEditMemberRole(currentUserRole, member.role as MemberRole)}
 											<form method="POST" action="?/updateRole" use:enhance class="inline">
-												<input type="hidden" name="currentUserId" value={data.currentUser?.id ?? ''} />
 												<input type="hidden" name="targetUserId" value={member.id} />
 												<select
 													name="role"
@@ -265,11 +262,6 @@
 										<td class="px-5 py-3 text-right">
 											{#if canRemoveMember(currentUserRole, member.role as MemberRole)}
 												<form method="POST" action="?/remove" use:enhance class="inline">
-													<input
-														type="hidden"
-														name="currentUserId"
-														value={data.currentUser?.id ?? ''}
-													/>
 													<input type="hidden" name="targetUserId" value={member.id} />
 													<button
 														type="submit"

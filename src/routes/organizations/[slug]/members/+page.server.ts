@@ -1,66 +1,62 @@
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { organization, user } from '$lib/server/db/schema';
+import { organization, user, project } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import {
 	canManageMembers,
 	canChangeRole,
 	canRemoveMember,
+	canAssignRole,
 	validateMemberRole,
 	validateEmail,
 	type MemberRole
 } from '$lib/members';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ params, url }) => {
-	const currentUserId = url.searchParams.get('userId');
+async function resolveCurrentUser(locals: App.Locals, orgId: number) {
+	const session = await locals.auth();
+	if (!session?.user?.email) return null;
 
-	const [org] = await db
+	const [currentUser] = await db
 		.select()
-		.from(organization)
-		.where(eq(organization.slug, params.slug));
+		.from(user)
+		.where(and(eq(user.email, session.user.email), eq(user.organizationId, orgId)));
+
+	return currentUser ?? null;
+}
+
+export const load: PageServerLoad = async ({ params, locals }) => {
+	const [org] = await db.select().from(organization).where(eq(organization.slug, params.slug));
 
 	if (!org) {
 		return { error: '組織が見つかりません', org: null, members: [], currentUser: null };
 	}
 
-	const members = await db
-		.select()
-		.from(user)
-		.where(eq(user.organizationId, org.id));
+	const currentUser = await resolveCurrentUser(locals, org.id);
 
-	const currentUser = currentUserId
-		? members.find((m) => m.id === Number(currentUserId)) ?? null
-		: null;
+	if (!currentUser) {
+		redirect(303, '/');
+	}
+
+	const members = await db.select().from(user).where(eq(user.organizationId, org.id));
 
 	return { org, members, currentUser };
 };
 
 export const actions: Actions = {
-	add: async ({ request, params }) => {
+	add: async ({ request, params, locals }) => {
 		const data = await request.formData();
 		const name = data.get('name');
 		const email = data.get('email');
 		const role = data.get('role');
-		const currentUserId = data.get('currentUserId');
 
-		const [org] = await db
-			.select()
-			.from(organization)
-			.where(eq(organization.slug, params.slug));
+		const [org] = await db.select().from(organization).where(eq(organization.slug, params.slug));
 
 		if (!org) {
 			return fail(404, { error: '組織が見つかりません' });
 		}
 
-		if (!currentUserId) {
-			return fail(403, { error: '認証が必要です' });
-		}
-
-		const [currentUser] = await db
-			.select()
-			.from(user)
-			.where(and(eq(user.id, Number(currentUserId)), eq(user.organizationId, org.id)));
+		const currentUser = await resolveCurrentUser(locals, org.id);
 
 		if (!currentUser || !canManageMembers(currentUser.role as MemberRole)) {
 			return fail(403, { error: 'メンバーを管理する権限がありません' });
@@ -75,6 +71,10 @@ export const actions: Actions = {
 		}
 
 		const memberRole = typeof role === 'string' && validateMemberRole(role) ? role : 'member';
+
+		if (!canAssignRole(currentUser.role as MemberRole, memberRole as MemberRole)) {
+			return fail(403, { error: 'この権限を付与する権限がありません' });
+		}
 
 		try {
 			await db.insert(user).values({
@@ -91,22 +91,24 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	updateRole: async ({ request, params }) => {
+	updateRole: async ({ request, params, locals }) => {
 		const data = await request.formData();
 		const targetUserId = data.get('targetUserId');
 		const newRole = data.get('role');
-		const currentUserId = data.get('currentUserId');
 
-		const [org] = await db
-			.select()
-			.from(organization)
-			.where(eq(organization.slug, params.slug));
+		const [org] = await db.select().from(organization).where(eq(organization.slug, params.slug));
 
 		if (!org) {
 			return fail(404, { error: '組織が見つかりません' });
 		}
 
-		if (!currentUserId || !targetUserId) {
+		const currentUser = await resolveCurrentUser(locals, org.id);
+
+		if (!currentUser) {
+			return fail(403, { error: '認証が必要です' });
+		}
+
+		if (!targetUserId) {
 			return fail(400, { error: 'パラメータが不足しています' });
 		}
 
@@ -114,17 +116,12 @@ export const actions: Actions = {
 			return fail(400, { error: '無効な権限です' });
 		}
 
-		const [currentUser] = await db
-			.select()
-			.from(user)
-			.where(and(eq(user.id, Number(currentUserId)), eq(user.organizationId, org.id)));
-
 		const [targetUser] = await db
 			.select()
 			.from(user)
 			.where(and(eq(user.id, Number(targetUserId)), eq(user.organizationId, org.id)));
 
-		if (!currentUser || !targetUser) {
+		if (!targetUser) {
 			return fail(404, { error: 'ユーザーが見つかりません' });
 		}
 
@@ -139,7 +136,10 @@ export const actions: Actions = {
 		}
 
 		try {
-			await db.update(user).set({ role: newRole }).where(eq(user.id, Number(targetUserId)));
+			await db
+				.update(user)
+				.set({ role: newRole })
+				.where(eq(user.id, Number(targetUserId)));
 		} catch {
 			return fail(500, { error: '権限の変更に失敗しました' });
 		}
@@ -147,40 +147,50 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	remove: async ({ request, params }) => {
+	remove: async ({ request, params, locals }) => {
 		const data = await request.formData();
 		const targetUserId = data.get('targetUserId');
-		const currentUserId = data.get('currentUserId');
 
-		const [org] = await db
-			.select()
-			.from(organization)
-			.where(eq(organization.slug, params.slug));
+		const [org] = await db.select().from(organization).where(eq(organization.slug, params.slug));
 
 		if (!org) {
 			return fail(404, { error: '組織が見つかりません' });
 		}
 
-		if (!currentUserId || !targetUserId) {
-			return fail(400, { error: 'パラメータが不足しています' });
+		const currentUser = await resolveCurrentUser(locals, org.id);
+
+		if (!currentUser) {
+			return fail(403, { error: '認証が必要です' });
 		}
 
-		const [currentUser] = await db
-			.select()
-			.from(user)
-			.where(and(eq(user.id, Number(currentUserId)), eq(user.organizationId, org.id)));
+		if (!targetUserId) {
+			return fail(400, { error: 'パラメータが不足しています' });
+		}
 
 		const [targetUser] = await db
 			.select()
 			.from(user)
 			.where(and(eq(user.id, Number(targetUserId)), eq(user.organizationId, org.id)));
 
-		if (!currentUser || !targetUser) {
+		if (!targetUser) {
 			return fail(404, { error: 'ユーザーが見つかりません' });
 		}
 
 		if (!canRemoveMember(currentUser.role as MemberRole, targetUser.role as MemberRole)) {
 			return fail(403, { error: 'メンバーを削除する権限がありません' });
+		}
+
+		// Check for dependent projects before deleting
+		const userProjects = await db
+			.select({ id: project.id })
+			.from(project)
+			.where(eq(project.userId, Number(targetUserId)));
+
+		if (userProjects.length > 0) {
+			return fail(400, {
+				error:
+					'このメンバーにはプロジェクトが紐づいているため削除できません。先にプロジェクトを移譲または削除してください'
+			});
 		}
 
 		try {

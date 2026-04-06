@@ -4,6 +4,7 @@ import {
 	canManageMembers,
 	canChangeRole,
 	canEditMemberRole,
+	canAssignRole,
 	canRemoveMember,
 	validateMemberRole,
 	validateEmail,
@@ -119,6 +120,29 @@ describe('canEditMemberRole', () => {
 		expect(canEditMemberRole('member', 'member')).toBe(false);
 		expect(canEditMemberRole('member', 'admin')).toBe(false);
 		expect(canEditMemberRole('member', 'owner')).toBe(false);
+	});
+});
+
+describe('canAssignRole', () => {
+	it('allows owner to assign any role', () => {
+		expect(canAssignRole('owner', 'member')).toBe(true);
+		expect(canAssignRole('owner', 'admin')).toBe(true);
+		expect(canAssignRole('owner', 'owner')).toBe(true);
+	});
+
+	it('allows admin to assign member or admin role', () => {
+		expect(canAssignRole('admin', 'member')).toBe(true);
+		expect(canAssignRole('admin', 'admin')).toBe(true);
+	});
+
+	it('denies admin from assigning owner role', () => {
+		expect(canAssignRole('admin', 'owner')).toBe(false);
+	});
+
+	it('denies member from assigning any role', () => {
+		expect(canAssignRole('member', 'member')).toBe(false);
+		expect(canAssignRole('member', 'admin')).toBe(false);
+		expect(canAssignRole('member', 'owner')).toBe(false);
 	});
 });
 
