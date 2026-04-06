@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { handlePseudoButtonKeydown, handlePseudoButtonKeyup } from '$lib/keyboard';
 	import { Card, CardContent } from '$lib/components/ui/card';
 
 	function selectPersonal() {
@@ -8,25 +9,6 @@
 
 	function selectCorporate() {
 		goto('/signup/organization');
-	}
-
-	function handleOptionKeydown(event: KeyboardEvent, action: () => void) {
-		if (event.key === 'Enter') {
-			event.preventDefault();
-			action();
-			return;
-		}
-
-		if (event.key === ' ') {
-			event.preventDefault();
-		}
-	}
-
-	function handleOptionKeyup(event: KeyboardEvent, action: () => void) {
-		if (event.key === ' ') {
-			event.preventDefault();
-			action();
-		}
 	}
 </script>
 
@@ -39,8 +21,8 @@
 			role="button"
 			tabindex="0"
 			onclick={selectPersonal}
-			onkeydown={(e) => handleOptionKeydown(e, selectPersonal)}
-			onkeyup={(e) => handleOptionKeyup(e, selectPersonal)}
+			onkeydown={(e) => handlePseudoButtonKeydown(e, selectPersonal)}
+			onkeyup={(e) => handlePseudoButtonKeyup(e, selectPersonal)}
 			class="w-64 cursor-pointer rounded-xl text-left focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:outline-none"
 		>
 			<Card class="h-full border-2 transition hover:border-blue-500 hover:shadow-md">
@@ -58,8 +40,8 @@
 			role="button"
 			tabindex="0"
 			onclick={selectCorporate}
-			onkeydown={(e) => handleOptionKeydown(e, selectCorporate)}
-			onkeyup={(e) => handleOptionKeyup(e, selectCorporate)}
+			onkeydown={(e) => handlePseudoButtonKeydown(e, selectCorporate)}
+			onkeyup={(e) => handlePseudoButtonKeyup(e, selectCorporate)}
 			class="w-64 cursor-pointer rounded-xl text-left focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:outline-none"
 		>
 			<Card class="h-full border-2 transition hover:border-blue-500 hover:shadow-md">

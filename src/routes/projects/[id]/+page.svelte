@@ -4,6 +4,7 @@
 	import HelpTooltip from '$lib/components/HelpTooltip.svelte';
 	import { validateDbml, type ValidationResult } from '$lib/dbml-validator';
 	import { isFileSystemAccessSupported, openDbmlFile, writeToFileHandle } from '$lib/file-system';
+	import { handlePseudoButtonKeydown, handlePseudoButtonKeyup } from '$lib/keyboard';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Badge } from '$lib/components/ui/badge';
@@ -68,25 +69,6 @@
 		}
 	}
 
-	function handleOptionKeydown(event: KeyboardEvent, action: () => void) {
-		if (event.key === 'Enter') {
-			event.preventDefault();
-			action();
-			return;
-		}
-
-		if (event.key === ' ') {
-			event.preventDefault();
-		}
-	}
-
-	function handleOptionKeyup(event: KeyboardEvent, action: () => void) {
-		if (event.key === ' ') {
-			event.preventDefault();
-			action();
-		}
-	}
-
 	async function save() {
 		isSaving = true;
 		try {
@@ -148,8 +130,8 @@
 				role="button"
 				tabindex="0"
 				onclick={startNew}
-				onkeydown={(e) => handleOptionKeydown(e, startNew)}
-				onkeyup={(e) => handleOptionKeyup(e, startNew)}
+				onkeydown={(e) => handlePseudoButtonKeydown(e, startNew)}
+				onkeyup={(e) => handlePseudoButtonKeyup(e, startNew)}
 				class="w-56 cursor-pointer rounded-xl text-left focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:outline-none"
 			>
 				<Card class="h-full border-2 transition hover:border-blue-400 hover:shadow-md">
@@ -167,8 +149,8 @@
 				role="button"
 				tabindex="0"
 				onclick={selectFile}
-				onkeydown={(e) => handleOptionKeydown(e, selectFile)}
-				onkeyup={(e) => handleOptionKeyup(e, selectFile)}
+				onkeydown={(e) => handlePseudoButtonKeydown(e, selectFile)}
+				onkeyup={(e) => handlePseudoButtonKeyup(e, selectFile)}
 				class="w-56 cursor-pointer rounded-xl text-left focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:outline-none"
 			>
 				<Card class="h-full border-2 transition hover:border-blue-400 hover:shadow-md">
