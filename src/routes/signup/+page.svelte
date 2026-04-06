@@ -20,7 +20,12 @@
 			role="button"
 			tabindex="0"
 			onclick={selectPersonal}
-			onkeydown={(e) => e.key === 'Enter' && selectPersonal()}
+			onkeydown={(e) => {
+				if (e.key === 'Enter' || e.key === ' ') {
+					e.preventDefault();
+					selectPersonal();
+				}
+			}}
 			class="w-64 cursor-pointer text-left"
 		>
 			<Card class="h-full border-2 transition hover:border-blue-500 hover:shadow-md">
@@ -38,7 +43,12 @@
 			role="button"
 			tabindex="0"
 			onclick={selectCorporate}
-			onkeydown={(e) => e.key === 'Enter' && selectCorporate()}
+			onkeydown={(e) => {
+				if (e.key === 'Enter' || e.key === ' ') {
+					e.preventDefault();
+					selectCorporate();
+				}
+			}}
 			class="w-64 cursor-pointer text-left"
 		>
 			<Card class="h-full border-2 transition hover:border-blue-500 hover:shadow-md">

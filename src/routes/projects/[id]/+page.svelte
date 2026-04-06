@@ -61,6 +61,14 @@
 		hasStarted = true;
 	}
 
+	function selectFile() {
+		if (isFileSystemAccessSupported()) {
+			handleFileSelectWithApi();
+		} else {
+			fileInput?.click();
+		}
+	}
+
 	async function save() {
 		isSaving = true;
 		try {
@@ -122,7 +130,12 @@
 				role="button"
 				tabindex="0"
 				onclick={startNew}
-				onkeydown={(e) => e.key === 'Enter' && startNew()}
+				onkeydown={(e) => {
+					if (e.key === 'Enter' || e.key === ' ') {
+						e.preventDefault();
+						startNew();
+					}
+				}}
 				class="w-56 cursor-pointer text-left"
 			>
 				<Card class="h-full border-2 transition hover:border-blue-400 hover:shadow-md">
@@ -139,20 +152,11 @@
 			<div
 				role="button"
 				tabindex="0"
-				onclick={() => {
-					if (isFileSystemAccessSupported()) {
-						handleFileSelectWithApi();
-					} else {
-						fileInput?.click();
-					}
-				}}
+				onclick={selectFile}
 				onkeydown={(e) => {
-					if (e.key === 'Enter') {
-						if (isFileSystemAccessSupported()) {
-							handleFileSelectWithApi();
-						} else {
-							fileInput?.click();
-						}
+					if (e.key === 'Enter' || e.key === ' ') {
+						e.preventDefault();
+						selectFile();
 					}
 				}}
 				class="w-56 cursor-pointer text-left"
