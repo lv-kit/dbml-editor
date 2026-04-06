@@ -13,7 +13,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	const [currentUser] = await db
 		.select()
 		.from(user)
-		.where(eq(user.id, Number(userId)));
+		.where(and(eq(user.id, Number(userId)), isNull(user.deletedAt)));
 	if (!currentUser) {
 		throw redirect(303, '/signup');
 	}

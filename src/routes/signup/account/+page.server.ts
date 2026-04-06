@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { user } from '$lib/server/db/schema';
+import { organization, user } from '$lib/server/db/schema';
+import { eq, and, isNull } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -54,13 +55,33 @@ export const actions: Actions = {
 			});
 		}
 		try {
+			// Determine role: only assign 'owner' if org exists and has no existing owner
+			let role = 'member';
+			if (orgId) {
+				const [org] = await db.select().from(organization).where(eq(organization.id, orgId));
+				if (!org) {
+					return fail(400, {
+						name: name,
+						email: email,
+						error: '指定された組織が見つかりません'
+					});
+				}
+				const [existingOwner] = await db
+					.select({ id: user.id })
+					.from(user)
+					.where(
+						and(eq(user.organizationId, orgId), eq(user.role, 'owner'), isNull(user.deletedAt))
+					);
+				role = existingOwner ? 'member' : 'owner';
+			}
+
 			const [inserted] = await db
 				.insert(user)
 				.values({
 					name: name.trim(),
 					email: email.trim(),
 					userType: typeof userType === 'string' ? userType : 'personal',
-					role: orgId ? 'owner' : null,
+					role,
 					organizationId: orgId
 				})
 				.returning({ id: user.id });

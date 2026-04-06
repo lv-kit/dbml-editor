@@ -19,9 +19,10 @@ export const user = pgTable('user', {
 	name: text('name').notNull(),
 	email: text('email').notNull().unique(),
 	userType: text('user_type').notNull(),
-	role: text('role'),
+	role: text('role').notNull().default('member'),
 	organizationId: integer('organization_id').references(() => organization.id),
-	createdAt: timestamp('created_at').notNull().defaultNow()
+	createdAt: timestamp('created_at').notNull().defaultNow(),
+	deletedAt: timestamp('deleted_at')
 });
 
 export const project = pgTable('project', {
