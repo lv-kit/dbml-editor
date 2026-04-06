@@ -15,7 +15,7 @@ async function getCurrentUser(event: { locals: App.Locals }) {
 		return undefined;
 	}
 	const [currentUser] = await db
-		.select({ id: user.id, role: user.role })
+		.select({ id: user.id, role: user.role, organizationId: user.organizationId })
 		.from(user)
 		.where(eq(user.email, session.user.email));
 	return currentUser;
@@ -33,6 +33,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		.where(and(eq(organization.id, Number(params.id)), isNull(organization.deletedAt)));
 
 	if (!org) {
+		throw redirect(303, '/organizations');
+	}
+
+	// Enforce org membership — only members of this org can view details
+	if (currentUser.organizationId !== org.id) {
 		throw redirect(303, '/organizations');
 	}
 

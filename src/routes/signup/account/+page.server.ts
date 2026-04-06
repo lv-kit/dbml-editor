@@ -46,7 +46,7 @@ export const actions: Actions = {
 
 		let userId: number;
 		const orgId = organizationId ? Number(organizationId) : null;
-		if (orgId !== null && (!Number.isFinite(orgId) || orgId <= 0)) {
+		if (orgId !== null && (!Number.isInteger(orgId) || orgId <= 0)) {
 			return fail(400, {
 				name: name,
 				email: email,
