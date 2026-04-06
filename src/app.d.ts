@@ -30,6 +30,7 @@ declare global {
 	interface FileSystemWritableFileStream extends WritableStream {
 		write(data: string | ArrayBuffer | Blob | DataView): Promise<void>;
 		close(): Promise<void>;
+		abort(): Promise<void>;
 	}
 
 	interface FilePickerAcceptType {

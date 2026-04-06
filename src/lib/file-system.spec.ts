@@ -21,6 +21,12 @@ describe('openDbmlFile', () => {
 		}
 	});
 
+	it('throws when File System Access API is not supported', async () => {
+		await expect(openDbmlFile()).rejects.toThrow(
+			'File System Access API is not supported in this environment'
+		);
+	});
+
 	it('reads file content and returns handle', async () => {
 		const mockFile = new File(['Table users { id integer [pk] }'], 'schema.dbml', {
 			type: 'text/plain'
@@ -80,5 +86,22 @@ describe('writeToFileHandle', () => {
 
 		expect(mockWritable.write).toHaveBeenCalledWith('');
 		expect(mockWritable.close).toHaveBeenCalledOnce();
+	});
+
+	it('aborts the writable stream when write fails', async () => {
+		const writeError = new Error('Disk full');
+		const mockWritable = {
+			write: vi.fn().mockRejectedValue(writeError),
+			close: vi.fn().mockResolvedValue(undefined),
+			abort: vi.fn().mockResolvedValue(undefined)
+		};
+		const mockHandle = {
+			createWritable: vi.fn().mockResolvedValue(mockWritable)
+		} as unknown as FileSystemFileHandle;
+
+		await expect(writeToFileHandle(mockHandle, 'content')).rejects.toThrow('Disk full');
+
+		expect(mockWritable.abort).toHaveBeenCalledOnce();
+		expect(mockWritable.close).not.toHaveBeenCalled();
 	});
 });

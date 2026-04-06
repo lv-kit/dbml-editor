@@ -7,7 +7,7 @@ export interface ValidationResult {
 
 export function validateDbml(content: string): ValidationResult {
 	if (!content.trim()) {
-		return { valid: false, error: 'DBML content is empty' };
+		return { valid: false, error: 'DBMLの内容が空です' };
 	}
 
 	try {

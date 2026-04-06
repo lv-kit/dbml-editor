@@ -16,7 +16,7 @@
 	let fileHandle = $state<FileSystemFileHandle | null>(null);
 	let isOverwriting = $state(false);
 
-	let validation = $derived(validateDbml(content));
+	let validation = $derived(fileHandle ? validateDbml(content) : { valid: true, error: null });
 
 	$effect(() => {
 		content = data.project.dbmlContent;
@@ -79,6 +79,8 @@
 		isOverwriting = true;
 		try {
 			await writeToFileHandle(fileHandle, content);
+		} catch (e) {
+			console.error('ファイル上書きに失敗しました:', e);
 		} finally {
 			isOverwriting = false;
 		}

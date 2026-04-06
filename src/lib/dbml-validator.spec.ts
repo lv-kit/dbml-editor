@@ -50,12 +50,12 @@ describe('validateDbml', () => {
 	it('returns invalid for empty content', () => {
 		const result = validateDbml('');
 		expect(result.valid).toBe(false);
-		expect(result.error).toBe('DBML content is empty');
+		expect(result.error).toBe('DBMLの内容が空です');
 	});
 
 	it('returns invalid for whitespace-only content', () => {
 		const result = validateDbml('   \n  \t  ');
 		expect(result.valid).toBe(false);
-		expect(result.error).toBe('DBML content is empty');
+		expect(result.error).toBe('DBMLの内容が空です');
 	});
 });

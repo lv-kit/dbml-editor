@@ -1,6 +1,7 @@
 /**
  * File System Access API utilities for reading and writing local files.
- * Falls back gracefully when the API is not supported.
+ * Use `isFileSystemAccessSupported()` to detect browser support before calling
+ * the API-dependent helpers in this module.
  */
 
 export interface FileOpenResult {
@@ -14,6 +15,10 @@ export function isFileSystemAccessSupported(): boolean {
 }
 
 export async function openDbmlFile(): Promise<FileOpenResult> {
+	if (!isFileSystemAccessSupported()) {
+		throw new Error('File System Access API is not supported in this environment');
+	}
+
 	const [handle] = await window.showOpenFilePicker({
 		types: [
 			{
@@ -35,6 +40,16 @@ export async function writeToFileHandle(
 	content: string
 ): Promise<void> {
 	const writable = await handle.createWritable();
-	await writable.write(content);
-	await writable.close();
+	try {
+		await writable.write(content);
+		await writable.close();
+	} catch (error) {
+		try {
+			await writable.abort();
+		} catch {
+			// Ignore abort errors and rethrow the original write/close error.
+		}
+
+		throw error;
+	}
 }
