@@ -176,6 +176,9 @@
 						title={validation.error
 							? `バリデーションエラー: ${validation.error}`
 							: 'ローカルファイルを上書き'}
+						aria-label={validation.error
+							? `ファイル上書き（バリデーションエラー: ${validation.error}）`
+							: 'ローカルファイルを上書き'}
 						data-testid="overwrite-button"
 					>
 						{isOverwriting ? '上書き中...' : 'ファイル上書き'}

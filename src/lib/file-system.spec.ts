@@ -27,7 +27,7 @@ describe('writeToFileHandle', () => {
 		expect(mockWritable.close).toHaveBeenCalledOnce();
 	});
 
-	it('closes the writable even after writing', async () => {
+	it('closes the writable stream when writing empty content', async () => {
 		const mockWritable = {
 			write: vi.fn().mockResolvedValue(undefined),
 			close: vi.fn().mockResolvedValue(undefined)
