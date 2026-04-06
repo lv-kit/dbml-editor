@@ -1,7 +1,7 @@
 <script lang="ts">
 	import {
 		canManageMembers,
-		canChangeRole,
+		canEditMemberRole,
 		canRemoveMember,
 		type MemberRole
 	} from '$lib/members';
@@ -113,7 +113,7 @@
 							</td>
 							<td class="px-5 py-3 text-sm text-gray-600">{member.email}</td>
 							<td class="px-5 py-3 text-sm">
-								{#if isManager && canChangeRole(currentUserRole, member.role, member.role)}
+							{#if isManager && canEditMemberRole(currentUserRole, member.role)}
 									<select
 										class="rounded border border-gray-300 px-2 py-1 text-sm">
 										<option value="member" selected={member.role === 'member'}>メンバー</option>

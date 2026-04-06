@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import {
 		canManageMembers,
-		canChangeRole,
+		canEditMemberRole,
 		canRemoveMember,
 		type MemberRole
 	} from '$lib/members';
@@ -225,7 +225,7 @@
 										>{member.email}</td
 									>
 									<td class="px-5 py-3 text-sm">
-										{#if isManager && canChangeRole(currentUserRole, member.role as MemberRole, member.role as MemberRole)}
+										{#if isManager && canEditMemberRole(currentUserRole, member.role as MemberRole)}
 											<form method="POST" action="?/updateRole" use:enhance class="inline">
 												<input type="hidden" name="currentUserId" value={data.currentUser?.id ?? ''} />
 												<input type="hidden" name="targetUserId" value={member.id} />

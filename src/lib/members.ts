@@ -36,6 +36,17 @@ export function canRemoveMember(
 	return false;
 }
 
+export function canEditMemberRole(
+	requestingUserRole: MemberRole,
+	targetCurrentRole: MemberRole
+): boolean {
+	if (!canManageMembers(requestingUserRole)) return false;
+	if (requestingUserRole === 'owner') return true;
+	// admin can only edit members' roles, not other admins or owners
+	if (requestingUserRole === 'admin') return targetCurrentRole === 'member';
+	return false;
+}
+
 export function validateEmail(email: string): boolean {
 	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }

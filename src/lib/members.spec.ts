@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	canManageMembers,
 	canChangeRole,
+	canEditMemberRole,
 	canRemoveMember,
 	validateMemberRole,
 	validateEmail,
@@ -95,6 +96,29 @@ describe('canRemoveMember', () => {
 		expect(canRemoveMember('member', 'member')).toBe(false);
 		expect(canRemoveMember('member', 'admin')).toBe(false);
 		expect(canRemoveMember('member', 'owner')).toBe(false);
+	});
+});
+
+describe('canEditMemberRole', () => {
+	it('allows owner to edit any role', () => {
+		expect(canEditMemberRole('owner', 'member')).toBe(true);
+		expect(canEditMemberRole('owner', 'admin')).toBe(true);
+		expect(canEditMemberRole('owner', 'owner')).toBe(true);
+	});
+
+	it('allows admin to edit member role', () => {
+		expect(canEditMemberRole('admin', 'member')).toBe(true);
+	});
+
+	it('denies admin from editing admin or owner roles', () => {
+		expect(canEditMemberRole('admin', 'admin')).toBe(false);
+		expect(canEditMemberRole('admin', 'owner')).toBe(false);
+	});
+
+	it('denies member from editing any role', () => {
+		expect(canEditMemberRole('member', 'member')).toBe(false);
+		expect(canEditMemberRole('member', 'admin')).toBe(false);
+		expect(canEditMemberRole('member', 'owner')).toBe(false);
 	});
 });
 
