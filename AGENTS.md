@@ -9,6 +9,13 @@
 - Please avoid implementations that could lead to security vulnerabilities.
 - Please handle matters that are better dealt with on the server side on the server side.
 
+## スクリーンショットルール
+
+- UIに変更があった場合は、必ずスクリーンショットを撮影してください。
+- スクリーンショット撮影時は、日本語が文字化けしないように、事前に日本語フォント（例: `fonts-noto-cjk` や `fonts-ipafont`）をインストールしてください。
+  - 例: `sudo apt-get install -y fonts-noto-cjk` をスクリーンショット撮影前に実行してください。
+- スクリーンショットはブラウザ（Playwright等）で撮影し、UIの表示を確認してください。
+
 ---
 
 You are able to use the Svelte MCP server, where you have access to comprehensive Svelte 5 and SvelteKit documentation. Here's how to use the available tools effectively:
