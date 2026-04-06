@@ -60,10 +60,7 @@ export function createOrganizationRepository(db: DbClient): OrganizationReposito
 			await db.update(user).set({ role, organizationId }).where(eq(user.id, userId));
 		},
 		async findUserIdsByOrganization(organizationId: number) {
-			return db
-				.select({ id: user.id })
-				.from(user)
-				.where(eq(user.organizationId, organizationId));
+			return db.select({ id: user.id }).from(user).where(eq(user.organizationId, organizationId));
 		},
 		async softDeleteProjectsByUserId(userId: number, deletedAt: Date) {
 			await db
@@ -72,10 +69,7 @@ export function createOrganizationRepository(db: DbClient): OrganizationReposito
 				.where(and(eq(project.userId, userId), isNull(project.deletedAt)));
 		},
 		async softDeleteOrganization(organizationId: number, deletedAt: Date) {
-			await db
-				.update(organization)
-				.set({ deletedAt })
-				.where(eq(organization.id, organizationId));
+			await db.update(organization).set({ deletedAt }).where(eq(organization.id, organizationId));
 		}
 	};
 }

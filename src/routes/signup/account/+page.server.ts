@@ -45,6 +45,7 @@ export const actions: Actions = {
 		}
 
 		let userId: number;
+		const orgId = organizationId ? Number(organizationId) : null;
 		try {
 			const [inserted] = await db
 				.insert(user)
@@ -52,7 +53,8 @@ export const actions: Actions = {
 					name: name.trim(),
 					email: email.trim(),
 					userType: typeof userType === 'string' ? userType : 'personal',
-					organizationId: organizationId ? Number(organizationId) : null
+					role: orgId ? 'owner' : null,
+					organizationId: orgId
 				})
 				.returning({ id: user.id });
 			userId = inserted.id;
