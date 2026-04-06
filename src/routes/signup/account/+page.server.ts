@@ -4,44 +4,49 @@ import { organization, user } from '$lib/server/db/schema';
 import { eq, and, isNull } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, locals }) => {
+	const session = await locals.auth();
+
+	// If not authenticated, redirect to login
+	if (!session?.user?.email) {
+		throw redirect(303, '/login?returnTo=/signup/account');
+	}
+
 	const userType = url.searchParams.get('userType') ?? 'personal';
 	const organizationId = url.searchParams.get('organizationId');
+
 	return {
 		userType,
-		organizationId: organizationId ? Number(organizationId) : null
+		organizationId: organizationId ? Number(organizationId) : null,
+		sessionEmail: session.user.email,
+		sessionName: session.user.name || ''
 	};
 };
 
 export const actions: Actions = {
-	default: async ({ request }) => {
+	default: async ({ request, locals }) => {
+		const session = await locals.auth();
+
+		// Verify user is authenticated
+		if (!session?.user?.email) {
+			return fail(401, {
+				error: '認証が必要です。再度ログインしてください。'
+			});
+		}
+
 		const data = await request.formData();
 		const name = data.get('name');
-		const email = data.get('email');
 		const userType = data.get('userType');
 		const organizationId = data.get('organizationId');
+
+		// Use email from session, not from form
+		const email = session.user.email;
 
 		if (!name || typeof name !== 'string' || name.trim() === '') {
 			return fail(400, {
 				name: name ?? '',
-				email: email ?? '',
-				error: '名前を入力してください'
-			});
-		}
-
-		if (!email || typeof email !== 'string' || email.trim() === '') {
-			return fail(400, {
-				name: name,
-				email: email ?? '',
-				error: 'メールアドレスを入力してください'
-			});
-		}
-
-		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-			return fail(400, {
-				name: name,
 				email: email,
-				error: '有効なメールアドレスを入力してください'
+				error: '名前を入力してください'
 			});
 		}
 
@@ -54,7 +59,19 @@ export const actions: Actions = {
 				error: '無効な組織IDです'
 			});
 		}
+
 		try {
+			// Check if user already exists
+			const [existingUser] = await db
+				.select()
+				.from(user)
+				.where(and(eq(user.email, email), isNull(user.deletedAt)));
+
+			if (existingUser) {
+				// User already registered, redirect to projects
+				throw redirect(303, `/projects?userId=${existingUser.id}`);
+			}
+
 			// Determine role: only assign 'owner' if org exists and has no existing owner
 			let role = 'member';
 			if (orgId) {
@@ -75,18 +92,29 @@ export const actions: Actions = {
 				role = existingOwner ? 'member' : 'owner';
 			}
 
+			// Get auth provider from session
+			const authProvider = session.user.provider || 'unknown';
+			const authProviderId = session.user.id || null;
+
 			const [inserted] = await db
 				.insert(user)
 				.values({
 					name: name.trim(),
-					email: email.trim(),
+					email: email,
 					userType: typeof userType === 'string' ? userType : 'personal',
 					role,
-					organizationId: orgId
+					organizationId: orgId,
+					authProvider,
+					authProviderId
 				})
 				.returning({ id: user.id });
 			userId = inserted.id;
-		} catch {
+		} catch (error) {
+			// If it's a redirect, re-throw it
+			if (error && typeof error === 'object' && 'status' in error && error.status === 303) {
+				throw error;
+			}
+
 			return fail(500, {
 				name: name,
 				email: email,

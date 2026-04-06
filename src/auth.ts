@@ -5,6 +5,10 @@ import type { Provider, ProviderId } from '@auth/core/providers';
 import GitHub from '@auth/core/providers/github';
 import Google from '@auth/core/providers/google';
 import MicrosoftEntraID from '@auth/core/providers/microsoft-entra-id';
+import Resend from '@auth/core/providers/resend';
+import { db } from '$lib/server/db';
+import { user } from '$lib/server/db/schema';
+import { eq, and, isNull } from 'drizzle-orm';
 
 type ProviderAvailability = { id: ProviderId; name: string; ready: boolean };
 
@@ -30,11 +34,27 @@ const providerDefinitions = [
 		name: 'Microsoft',
 		clientIdKey: 'MICROSOFT_ENTRA_ID_CLIENT_ID',
 		clientSecretKey: 'MICROSOFT_ENTRA_ID_CLIENT_SECRET',
-		create: (clientId: string, clientSecret: string, source: EnvSource) =>
-			MicrosoftEntraID({
+		create: (clientId: string, clientSecret: string, source: EnvSource) => {
+			const config: any = {
 				clientId,
-				clientSecret,
-				tenantId: source.MICROSOFT_ENTRA_ID_TENANT ?? 'common'
+				clientSecret
+			};
+			const tenantId = source.MICROSOFT_ENTRA_ID_TENANT;
+			if (tenantId) {
+				config.tenantId = tenantId;
+			}
+			return MicrosoftEntraID(config);
+		}
+	},
+	{
+		id: 'resend' as const satisfies ProviderId,
+		name: 'Email',
+		clientIdKey: 'RESEND_API_KEY',
+		clientSecretKey: 'RESEND_API_KEY',
+		create: (clientId: string) =>
+			Resend({
+				apiKey: clientId,
+				from: 'noreply@dbml-editor.com'
 			})
 	}
 ] satisfies Array<{
@@ -71,7 +91,7 @@ function buildProviders(event?: RequestEvent) {
 
 			return create(clientId, clientSecret, source);
 		})
-		.filter((provider): provider is Provider => Boolean(provider));
+		.filter((provider): provider is NonNullable<typeof provider> => Boolean(provider));
 }
 
 function resolveSecret(event?: RequestEvent) {
@@ -99,6 +119,18 @@ export const { handle, signIn, signOut } = SvelteKitAuth(async (event) => {
 	return {
 		providers,
 		secret: resolveSecret(event),
-		trustHost: resolveTrustHost(event)
-	};
+		trustHost: resolveTrustHost(event),
+		callbacks: {
+			async signIn({ user: authUser }) {
+				// Allow sign in if user has email
+				return Boolean(authUser?.email);
+			},
+			async redirect({ url, baseUrl }) {
+				// If callback URL is provided, use it
+				if (url.startsWith(baseUrl)) return url;
+				// Otherwise redirect to signup flow
+				return `${baseUrl}/signup`;
+			}
+		}
+	} as any;
 });

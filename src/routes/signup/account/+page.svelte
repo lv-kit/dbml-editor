@@ -8,12 +8,10 @@
 
 	let { data, form } = $props();
 
-	let nameInput = $state('');
-	let emailInput = $state('');
+	let nameInput = $state(data.sessionName || '');
 
 	$effect(() => {
 		if (form?.name) nameInput = form.name as string;
-		if (form?.email) emailInput = form.email as string;
 	});
 
 	let isCorporate = $derived(data.userType === 'corporate');
@@ -50,6 +48,22 @@
 					{/if}
 
 					<div class="mb-4">
+						<Label for="email" class="mb-1 block">
+							メールアドレス
+						</Label>
+						<Input
+							id="email"
+							type="email"
+							value={data.sessionEmail}
+							disabled
+							class="bg-gray-100"
+						/>
+						<p class="mt-1 text-xs text-gray-500">
+							認証されたメールアドレスが使用されます
+						</p>
+					</div>
+
+					<div class="mb-6">
 						<Label for="name" class="mb-1 block">
 							名前 <span class="text-red-500">*</span>
 						</Label>
@@ -61,21 +75,6 @@
 							oninput={(e) => (nameInput = (e.target as HTMLInputElement).value)}
 							required
 							placeholder="例: 田中太郎"
-						/>
-					</div>
-
-					<div class="mb-6">
-						<Label for="email" class="mb-1 block">
-							メールアドレス <span class="text-red-500">*</span>
-						</Label>
-						<Input
-							id="email"
-							name="email"
-							type="email"
-							value={emailInput}
-							oninput={(e) => (emailInput = (e.target as HTMLInputElement).value)}
-							required
-							placeholder="例: taro@example.com"
 						/>
 					</div>
 
