@@ -46,9 +46,15 @@ export const actions: Actions = {
 		}
 
 		let userId: number;
+		const orgId = organizationId ? Number(organizationId) : null;
+		if (orgId !== null && (!Number.isInteger(orgId) || orgId <= 0)) {
+			return fail(400, {
+				name: name,
+				email: email,
+				error: '無効な組織IDです'
+			});
+		}
 		try {
-			const orgId = organizationId ? Number(organizationId) : null;
-
 			// Determine role: only assign 'owner' if org exists and has no existing owner
 			let role = 'member';
 			if (orgId) {

@@ -10,7 +10,8 @@ export const organization = pgTable('organization', {
 	id: serial('id').primaryKey(),
 	name: text('name').notNull(),
 	slug: text('slug').notNull().unique(),
-	createdAt: timestamp('created_at').notNull().defaultNow()
+	createdAt: timestamp('created_at').notNull().defaultNow(),
+	deletedAt: timestamp('deleted_at')
 });
 
 export const user = pgTable('user', {
@@ -32,5 +33,6 @@ export const project = pgTable('project', {
 		.notNull()
 		.references(() => user.id),
 	createdAt: timestamp('created_at').notNull().defaultNow(),
-	updatedAt: timestamp('updated_at').notNull().defaultNow()
+	updatedAt: timestamp('updated_at').notNull().defaultNow(),
+	deletedAt: timestamp('deleted_at')
 });
