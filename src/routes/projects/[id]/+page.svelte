@@ -2,6 +2,8 @@
 	import DbmlCodeEditor from '$lib/components/DbmlCodeEditor.svelte';
 	import DbmlDiagram from '$lib/components/DbmlDiagram.svelte';
 	import HelpTooltip from '$lib/components/HelpTooltip.svelte';
+	import { validateDbml } from '$lib/dbml-validator';
+	import { isFileSystemAccessSupported, openDbmlFile, writeToFileHandle } from '$lib/file-system';
 
 	let { data } = $props();
 
@@ -11,6 +13,10 @@
 	let isSaving = $state(false);
 	let hasStarted = $state(false);
 	let fileInput = $state<HTMLInputElement>();
+	let fileHandle = $state<FileSystemFileHandle | null>(null);
+	let isOverwriting = $state(false);
+
+	let validation = $derived(validateDbml(content));
 
 	$effect(() => {
 		content = data.project.dbmlContent;
@@ -27,6 +33,19 @@
 		content = text;
 		savedContent = data.project.dbmlContent;
 		hasStarted = true;
+	}
+
+	async function handleFileSelectWithApi() {
+		try {
+			const result = await openDbmlFile();
+			content = result.content;
+			fileHandle = result.handle;
+			savedContent = data.project.dbmlContent;
+			hasStarted = true;
+		} catch (e) {
+			if (e instanceof DOMException && e.name === 'AbortError') return;
+			console.error('File open failed:', e);
+		}
 	}
 
 	function startNew() {
@@ -55,6 +74,16 @@
 		}
 	}
 
+	async function overwriteLocalFile() {
+		if (!fileHandle || !validation.valid) return;
+		isOverwriting = true;
+		try {
+			await writeToFileHandle(fileHandle, content);
+		} finally {
+			isOverwriting = false;
+		}
+	}
+
 	function download() {
 		const blob = new Blob([content], { type: 'text/plain' });
 		const url = URL.createObjectURL(blob);
@@ -69,10 +98,7 @@
 {#if !hasStarted}
 	<div class="flex h-screen flex-col items-center justify-center bg-gray-50">
 		<div class="mb-4">
-			<a
-				href="/projects?userId={data.userId}"
-				class="text-sm text-gray-500 hover:text-gray-700"
-			>
+			<a href="/projects?userId={data.userId}" class="text-sm text-gray-500 hover:text-gray-700">
 				← プロジェクト一覧に戻る
 			</a>
 		</div>
@@ -92,7 +118,13 @@
 			</button>
 
 			<button
-				onclick={() => fileInput?.click()}
+				onclick={() => {
+					if (isFileSystemAccessSupported()) {
+						handleFileSelectWithApi();
+					} else {
+						fileInput?.click();
+					}
+				}}
 				class="flex w-56 flex-col items-center rounded-lg border-2 border-gray-200 bg-white p-8 shadow-sm transition hover:border-blue-400 hover:shadow-md"
 			>
 				<span class="mb-4 text-4xl">📂</span>
@@ -117,10 +149,7 @@
 			class="flex items-center justify-between border-b border-gray-700 bg-gray-800 px-4 py-2"
 		>
 			<div class="flex items-center gap-3">
-				<a
-					href="/projects?userId={data.userId}"
-					class="text-sm text-gray-400 hover:text-gray-200"
-				>
+				<a href="/projects?userId={data.userId}" class="text-sm text-gray-400 hover:text-gray-200">
 					← プロジェクト一覧
 				</a>
 				<span class="text-gray-600">|</span>
@@ -139,6 +168,19 @@
 				>
 					{isSaving ? '保存中...' : '保存'}
 				</button>
+				{#if fileHandle}
+					<button
+						class="rounded bg-orange-600 px-3 py-1.5 text-sm text-white hover:bg-orange-700 disabled:opacity-40"
+						onclick={overwriteLocalFile}
+						disabled={!validation.valid || isOverwriting}
+						title={validation.error
+							? `バリデーションエラー: ${validation.error}`
+							: 'ローカルファイルを上書き'}
+						data-testid="overwrite-button"
+					>
+						{isOverwriting ? '上書き中...' : 'ファイル上書き'}
+					</button>
+				{/if}
 				<button
 					class="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
 					onclick={download}

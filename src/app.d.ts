@@ -20,6 +20,31 @@ declare global {
 		}
 		// interface PageState {}
 	}
+
+	// File System Access API
+	interface FileSystemFileHandle {
+		getFile(): Promise<File>;
+		createWritable(): Promise<FileSystemWritableFileStream>;
+	}
+
+	interface FileSystemWritableFileStream extends WritableStream {
+		write(data: string | ArrayBuffer | Blob | DataView): Promise<void>;
+		close(): Promise<void>;
+	}
+
+	interface FilePickerAcceptType {
+		description?: string;
+		accept: Record<string, string[]>;
+	}
+
+	interface OpenFilePickerOptions {
+		types?: FilePickerAcceptType[];
+		multiple?: boolean;
+	}
+
+	interface Window {
+		showOpenFilePicker(options?: OpenFilePickerOptions): Promise<FileSystemFileHandle[]>;
+	}
 }
 
 export {};
