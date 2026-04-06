@@ -1,12 +1,52 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { isFileSystemAccessSupported, writeToFileHandle } from './file-system';
+import { isFileSystemAccessSupported, openDbmlFile, writeToFileHandle } from './file-system';
 
 describe('isFileSystemAccessSupported', () => {
 	it('returns false when showOpenFilePicker is not available', () => {
 		// In Node test environment, window.showOpenFilePicker is not available
 		const result = isFileSystemAccessSupported();
 		expect(result).toBe(false);
+	});
+});
+
+describe('openDbmlFile', () => {
+	const originalWindow = globalThis.window;
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+		if (originalWindow === undefined) {
+			// @ts-expect-error restoring undefined window in Node
+			delete globalThis.window;
+		}
+	});
+
+	it('reads file content and returns handle', async () => {
+		const mockFile = new File(['Table users { id integer [pk] }'], 'schema.dbml', {
+			type: 'text/plain'
+		});
+		const mockHandle = {
+			getFile: vi.fn().mockResolvedValue(mockFile)
+		} as unknown as FileSystemFileHandle;
+
+		const mockPicker = vi.fn().mockResolvedValue([mockHandle]);
+		// @ts-expect-error mocking window for Node environment
+		globalThis.window = { showOpenFilePicker: mockPicker };
+
+		const result = await openDbmlFile();
+
+		expect(result.content).toBe('Table users { id integer [pk] }');
+		expect(result.handle).toBe(mockHandle);
+		expect(result.fileName).toBe('schema.dbml');
+	});
+
+	it('propagates AbortError when user cancels the picker', async () => {
+		const abortError = new DOMException('The user aborted a request.', 'AbortError');
+		const mockPicker = vi.fn().mockRejectedValue(abortError);
+		// @ts-expect-error mocking window for Node environment
+		globalThis.window = { showOpenFilePicker: mockPicker };
+
+		await expect(openDbmlFile()).rejects.toThrow(abortError);
 	});
 });
 
