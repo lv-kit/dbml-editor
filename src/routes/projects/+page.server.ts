@@ -1,6 +1,6 @@
 import { db } from '$lib/server/db';
 import { project, user } from '$lib/server/db/schema';
-import { asc, eq } from 'drizzle-orm';
+import { asc, eq, and, isNull } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -13,7 +13,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	const [currentUser] = await db
 		.select()
 		.from(user)
-		.where(eq(user.id, Number(userId)));
+		.where(and(eq(user.id, Number(userId)), isNull(user.deletedAt)));
 	if (!currentUser) {
 		throw redirect(303, '/signup');
 	}

@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { organization, user, project } from '$lib/server/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { organization, user } from '$lib/server/db/schema';
+import { eq, and, isNull } from 'drizzle-orm';
 import {
 	canManageMembers,
 	canChangeRole,
@@ -20,7 +20,13 @@ async function resolveCurrentUser(locals: App.Locals, orgId: number) {
 	const [currentUser] = await db
 		.select()
 		.from(user)
-		.where(and(eq(user.email, session.user.email), eq(user.organizationId, orgId)));
+		.where(
+			and(
+				eq(user.email, session.user.email),
+				eq(user.organizationId, orgId),
+				isNull(user.deletedAt)
+			)
+		);
 
 	return currentUser ?? null;
 }
@@ -38,7 +44,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		redirect(303, '/');
 	}
 
-	const members = await db.select().from(user).where(eq(user.organizationId, org.id));
+	const members = await db
+		.select()
+		.from(user)
+		.where(and(eq(user.organizationId, org.id), isNull(user.deletedAt)));
 
 	return { org, members, currentUser };
 };
@@ -119,7 +128,13 @@ export const actions: Actions = {
 		const [targetUser] = await db
 			.select()
 			.from(user)
-			.where(and(eq(user.id, Number(targetUserId)), eq(user.organizationId, org.id)));
+			.where(
+				and(
+					eq(user.id, Number(targetUserId)),
+					eq(user.organizationId, org.id),
+					isNull(user.deletedAt)
+				)
+			);
 
 		if (!targetUser) {
 			return fail(404, { error: 'ユーザーが見つかりません' });
@@ -171,7 +186,13 @@ export const actions: Actions = {
 		const [targetUser] = await db
 			.select()
 			.from(user)
-			.where(and(eq(user.id, Number(targetUserId)), eq(user.organizationId, org.id)));
+			.where(
+				and(
+					eq(user.id, Number(targetUserId)),
+					eq(user.organizationId, org.id),
+					isNull(user.deletedAt)
+				)
+			);
 
 		if (!targetUser) {
 			return fail(404, { error: 'ユーザーが見つかりません' });
@@ -181,21 +202,11 @@ export const actions: Actions = {
 			return fail(403, { error: 'メンバーを削除する権限がありません' });
 		}
 
-		// Check for dependent projects before deleting
-		const userProjects = await db
-			.select({ id: project.id })
-			.from(project)
-			.where(eq(project.userId, Number(targetUserId)));
-
-		if (userProjects.length > 0) {
-			return fail(400, {
-				error:
-					'このメンバーにはプロジェクトが紐づいているため削除できません。先にプロジェクトを移譲または削除してください'
-			});
-		}
-
 		try {
-			await db.delete(user).where(eq(user.id, Number(targetUserId)));
+			await db
+				.update(user)
+				.set({ deletedAt: new Date() })
+				.where(eq(user.id, Number(targetUserId)));
 		} catch {
 			return fail(500, { error: 'メンバーの削除に失敗しました' });
 		}

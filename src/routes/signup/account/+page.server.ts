@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { organization, user } from '$lib/server/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -52,10 +52,7 @@ export const actions: Actions = {
 			// Determine role: only assign 'owner' if org exists and has no existing owner
 			let role = 'member';
 			if (orgId) {
-				const [org] = await db
-					.select()
-					.from(organization)
-					.where(eq(organization.id, orgId));
+				const [org] = await db.select().from(organization).where(eq(organization.id, orgId));
 				if (!org) {
 					return fail(400, {
 						name: name,
@@ -66,7 +63,9 @@ export const actions: Actions = {
 				const [existingOwner] = await db
 					.select({ id: user.id })
 					.from(user)
-					.where(and(eq(user.organizationId, orgId), eq(user.role, 'owner')));
+					.where(
+						and(eq(user.organizationId, orgId), eq(user.role, 'owner'), isNull(user.deletedAt))
+					);
 				role = existingOwner ? 'member' : 'owner';
 			}
 
