@@ -4,6 +4,10 @@
 	import HelpTooltip from '$lib/components/HelpTooltip.svelte';
 	import { validateDbml, type ValidationResult } from '$lib/dbml-validator';
 	import { isFileSystemAccessSupported, openDbmlFile, writeToFileHandle } from '$lib/file-system';
+	import { Button } from '$lib/components/ui/button';
+	import { Card, CardContent } from '$lib/components/ui/card';
+	import { Alert, AlertDescription } from '$lib/components/ui/alert';
+	import { Badge } from '$lib/components/ui/badge';
 
 	let { data } = $props();
 
@@ -14,10 +18,6 @@
 	let hasStarted = $state(false);
 	let fileInput = $state<HTMLInputElement>();
 	let fileHandle = $state<FileSystemFileHandle | null>(null);
-	import { Button } from '$lib/components/ui/button';
-	import { Card, CardContent } from '$lib/components/ui/card';
-	import { Alert, AlertDescription } from '$lib/components/ui/alert';
-	import { Badge } from '$lib/components/ui/badge';
 
 	let isOverwriting = $state(false);
 	let overwriteError = $state<string | null>(null);
