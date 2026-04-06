@@ -80,6 +80,11 @@
 		"@codemirror/view": "^6.40.0",
 		"@dbml/core": "^6.4.0",
 		"@lezer/highlight": "^1.2.3",
-		"codemirror": "^6.0.2"
+		"bits-ui": "^2.17.2",
+		"clsx": "^2.1.1",
+		"codemirror": "^6.0.2",
+		"lucide-svelte": "^1.0.1",
+		"tailwind-merge": "^3.5.0",
+		"tailwind-variants": "^3.2.2"
 	}
 }

@@ -1,5 +1,10 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Button } from '$lib/components/ui/button';
+	import { Card, CardContent } from '$lib/components/ui/card';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 
 	let { data, form } = $props();
 
@@ -30,59 +35,56 @@
 			<p class="mt-1 text-sm text-gray-500">アカウント情報を入力してください</p>
 		</div>
 
-		<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-			{#if form?.error}
-				<div class="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
-					{form.error}
-				</div>
-			{/if}
-
-			<form method="POST" use:enhance>
-				<input type="hidden" name="userType" value={data.userType} />
-				{#if data.organizationId}
-					<input type="hidden" name="organizationId" value={data.organizationId} />
+		<Card>
+			<CardContent class="p-6">
+				{#if form?.error}
+					<Alert variant="destructive" class="mb-4">
+						<AlertDescription>{form.error}</AlertDescription>
+					</Alert>
 				{/if}
 
-				<div class="mb-4">
-					<label for="name" class="mb-1 block text-sm font-medium text-gray-700">
-						名前 <span class="text-red-500">*</span>
-					</label>
-					<input
-						id="name"
-						name="name"
-						type="text"
-						value={nameInput}
-						oninput={(e) => (nameInput = (e.target as HTMLInputElement).value)}
-						required
-						placeholder="例: 田中太郎"
-						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-					/>
-				</div>
+				<form method="POST" use:enhance>
+					<input type="hidden" name="userType" value={data.userType} />
+					{#if data.organizationId}
+						<input type="hidden" name="organizationId" value={data.organizationId} />
+					{/if}
 
-				<div class="mb-6">
-					<label for="email" class="mb-1 block text-sm font-medium text-gray-700">
-						メールアドレス <span class="text-red-500">*</span>
-					</label>
-					<input
-						id="email"
-						name="email"
-						type="email"
-						value={emailInput}
-						oninput={(e) => (emailInput = (e.target as HTMLInputElement).value)}
-						required
-						placeholder="例: taro@example.com"
-						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-					/>
-				</div>
+					<div class="mb-4">
+						<Label for="name" class="mb-1 block">
+							名前 <span class="text-red-500">*</span>
+						</Label>
+						<Input
+							id="name"
+							name="name"
+							type="text"
+							value={nameInput}
+							oninput={(e) => (nameInput = (e.target as HTMLInputElement).value)}
+							required
+							placeholder="例: 田中太郎"
+						/>
+					</div>
 
-				<button
-					type="submit"
-					class="w-full rounded-md bg-blue-600 px-6 py-2.5 text-sm text-white hover:bg-blue-700"
-				>
-					アカウントを作成
-				</button>
-			</form>
-		</div>
+					<div class="mb-6">
+						<Label for="email" class="mb-1 block">
+							メールアドレス <span class="text-red-500">*</span>
+						</Label>
+						<Input
+							id="email"
+							name="email"
+							type="email"
+							value={emailInput}
+							oninput={(e) => (emailInput = (e.target as HTMLInputElement).value)}
+							required
+							placeholder="例: taro@example.com"
+						/>
+					</div>
+
+					<Button type="submit" class="w-full">
+						アカウントを作成
+					</Button>
+				</form>
+			</CardContent>
+		</Card>
 
 		{#if isCorporate}
 			<div class="mt-4 flex justify-center">

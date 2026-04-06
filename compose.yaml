@@ -10,5 +10,19 @@ services:
       POSTGRES_DB: local
     volumes:
       - pgdata:/var/lib/postgresql
+  
+  web:
+    container_name: "dblm-editor-web"
+    build:
+      context: .
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      DATABASE_URL: postgres://root:mysecretpassword@db:5432/local
+    depends_on:
+      - db
 volumes:
   pgdata:
