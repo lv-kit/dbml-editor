@@ -3,8 +3,6 @@
 	import { handlePseudoButtonKeydown, handlePseudoButtonKeyup } from '$lib/keyboard';
 	import { Card, CardContent } from '$lib/components/ui/card';
 
-	let { data } = $props();
-
 	function selectPersonal() {
 		goto('/signup/account?userType=personal');
 	}

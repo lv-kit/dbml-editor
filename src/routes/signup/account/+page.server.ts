@@ -5,11 +5,12 @@ import { eq, and, isNull } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
-	const session = await locals.auth();
+	const session = locals.session;
 
 	// If not authenticated, redirect to login
-	if (!session?.user?.email) {
-		throw redirect(303, '/login?returnTo=/signup/account');
+	if (!session?.email) {
+		const returnTo = encodeURIComponent(url.pathname + url.search);
+		throw redirect(303, `/login?returnTo=${returnTo}`);
 	}
 
 	const userType = url.searchParams.get('userType') ?? 'personal';
@@ -18,18 +19,20 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	return {
 		userType,
 		organizationId: organizationId ? Number(organizationId) : null,
-		sessionEmail: session.user.email,
-		sessionName: session.user.name || ''
+		sessionEmail: session.email,
+		sessionName: session.name || ''
 	};
 };
 
 export const actions: Actions = {
 	default: async ({ request, locals }) => {
-		const session = await locals.auth();
+		const session = locals.session;
 
 		// Verify user is authenticated
-		if (!session?.user?.email) {
+		if (!session?.email) {
 			return fail(401, {
+				name: '',
+				email: '',
 				error: '認証が必要です。再度ログインしてください。'
 			});
 		}
@@ -39,8 +42,8 @@ export const actions: Actions = {
 		const userType = data.get('userType');
 		const organizationId = data.get('organizationId');
 
-		// Use email from session, not from form
-		const email = session.user.email;
+		// Use normalized email from session, not from form
+		const email = session.email.trim().toLowerCase();
 
 		if (!name || typeof name !== 'string' || name.trim() === '') {
 			return fail(400, {
@@ -69,7 +72,7 @@ export const actions: Actions = {
 
 			if (existingUser) {
 				// User already registered, redirect to projects
-				throw redirect(303, `/projects?userId=${existingUser.id}`);
+				throw redirect(303, '/projects');
 			}
 
 			// Determine role: only assign 'owner' if org exists and has no existing owner
@@ -92,9 +95,9 @@ export const actions: Actions = {
 				role = existingOwner ? 'member' : 'owner';
 			}
 
-			// Get auth provider from session
-			const authProvider = session.user.provider || 'unknown';
-			const authProviderId = session.user.id || null;
+			// Auth provider from session
+			const authProvider = session.provider ?? 'unknown';
+			const authProviderId = session.uid ?? null;
 
 			const [inserted] = await db
 				.insert(user)
@@ -122,6 +125,6 @@ export const actions: Actions = {
 			});
 		}
 
-		throw redirect(303, `/projects?userId=${userId}`);
+		throw redirect(303, '/projects');
 	}
 };

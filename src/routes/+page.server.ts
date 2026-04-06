@@ -5,10 +5,10 @@ import { eq, and, isNull } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
-	const session = await event.locals.auth();
+	const session = event.locals.session;
 
 	// If not authenticated, redirect to login
-	if (!session?.user?.email) {
+	if (!session?.email) {
 		throw redirect(303, '/login');
 	}
 
@@ -16,7 +16,7 @@ export const load: PageServerLoad = async (event) => {
 	const [currentUser] = await db
 		.select()
 		.from(user)
-		.where(and(eq(user.email, session.user.email), isNull(user.deletedAt)));
+		.where(and(eq(user.email, session.email), isNull(user.deletedAt)));
 
 	if (!currentUser) {
 		// User authenticated but not registered, go to signup
@@ -24,5 +24,5 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	// User exists, redirect to projects
-	throw redirect(303, `/projects?userId=${currentUser.id}`);
+	throw redirect(303, '/projects');
 };
