@@ -35,7 +35,6 @@
 						</Alert>
 					{/if}
 					<form method="POST" action="?/create" use:enhance class="flex items-end gap-3">
-						<input type="hidden" name="userId" value={data.user.id} />
 						<div class="flex-1">
 							<Label for="project-name" class="mb-1 block">
 								プロジェクト名
@@ -79,7 +78,7 @@
 			<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				{#each data.projects as proj}
 					<a
-						href="/projects/{proj.id}?userId={data.user.id}"
+						href="/projects/{proj.id}"
 						class="block"
 					>
 						<Card class="h-full transition hover:border-blue-300 hover:shadow-md">

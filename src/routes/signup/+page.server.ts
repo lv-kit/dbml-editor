@@ -9,20 +9,23 @@ export const load: PageServerLoad = async (event) => {
 
 	// If not authenticated, redirect to login
 	if (!session?.email) {
-		throw redirect(303, '/login');
+		throw redirect(303, '/login?returnTo=/signup');
 	}
 
-	// Check if user exists in database
-	const [currentUser] = await db
+	// Check if user already exists in database
+	const [existingUser] = await db
 		.select()
 		.from(user)
 		.where(and(eq(user.email, session.email), isNull(user.deletedAt)));
 
-	if (!currentUser) {
-		// User authenticated but not registered, go to signup
-		throw redirect(303, '/signup');
+	if (existingUser) {
+		// User already has an account, redirect to projects
+		throw redirect(303, '/projects');
 	}
 
-	// User exists, redirect to projects
-	throw redirect(303, '/projects');
+	// Return user info from session to pre-fill form
+	return {
+		userEmail: session.email,
+		userName: session.name || ''
+	};
 };

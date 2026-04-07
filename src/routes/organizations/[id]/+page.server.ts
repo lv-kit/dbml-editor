@@ -10,14 +10,14 @@ import {
 import type { Actions, PageServerLoad } from './$types';
 
 async function getCurrentUser(event: { locals: App.Locals }) {
-	const session = await event.locals.auth();
-	if (!session?.user?.email) {
+	const session = event.locals.session;
+	if (!session?.email) {
 		return undefined;
 	}
 	const [currentUser] = await db
 		.select({ id: user.id, role: user.role, organizationId: user.organizationId })
 		.from(user)
-		.where(eq(user.email, session.user.email));
+		.where(eq(user.email, session.email));
 	return currentUser;
 }
 

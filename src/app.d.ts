@@ -1,7 +1,6 @@
-/// <reference types="@auth/sveltekit" />
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
-import type { Session } from '@auth/core/types';
+import type { SessionPayload } from '$lib/server/session';
 
 declare global {
 	namespace App {
@@ -13,10 +12,16 @@ declare global {
 		}
 
 		// interface Error {}
-		// interface Locals {}
+		interface Locals {
+			session: SessionPayload | null;
+		}
 		interface PageData {
-			session?: Session | null;
-			providers?: { id: string; name: string; ready: boolean }[];
+			firebaseConfig?: {
+				apiKey: string;
+				authDomain: string;
+				projectId: string;
+				appId: string;
+			};
 		}
 		// interface PageState {}
 	}

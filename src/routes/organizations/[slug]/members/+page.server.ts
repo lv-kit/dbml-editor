@@ -14,15 +14,15 @@ import {
 import type { Actions, PageServerLoad } from './$types';
 
 async function resolveCurrentUser(locals: App.Locals, orgId: number) {
-	const session = await locals.auth();
-	if (!session?.user?.email) return null;
+	const session = locals.session;
+	if (!session?.email) return null;
 
 	const [currentUser] = await db
 		.select()
 		.from(user)
 		.where(
 			and(
-				eq(user.email, session.user.email),
+				eq(user.email, session.email),
 				eq(user.organizationId, orgId),
 				isNull(user.deletedAt)
 			)

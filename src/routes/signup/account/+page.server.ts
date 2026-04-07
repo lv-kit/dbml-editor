@@ -4,48 +4,55 @@ import { organization, user } from '$lib/server/db/schema';
 import { eq, and, isNull } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, locals }) => {
+	const session = locals.session;
+
+	// If not authenticated, redirect to login
+	if (!session?.email) {
+		const returnTo = encodeURIComponent(url.pathname + url.search);
+		throw redirect(303, `/login?returnTo=${returnTo}`);
+	}
+
 	const userType = url.searchParams.get('userType') ?? 'personal';
 	const organizationId = url.searchParams.get('organizationId');
+
 	return {
 		userType,
-		organizationId: organizationId ? Number(organizationId) : null
+		organizationId: organizationId ? Number(organizationId) : null,
+		sessionEmail: session.email,
+		sessionName: session.name || ''
 	};
 };
 
 export const actions: Actions = {
-	default: async ({ request }) => {
+	default: async ({ request, locals }) => {
+		const session = locals.session;
+
+		// Verify user is authenticated
+		if (!session?.email) {
+			return fail(401, {
+				name: '',
+				email: '',
+				error: '認証が必要です。再度ログインしてください。'
+			});
+		}
+
 		const data = await request.formData();
 		const name = data.get('name');
-		const email = data.get('email');
 		const userType = data.get('userType');
 		const organizationId = data.get('organizationId');
+
+		// Use normalized email from session, not from form
+		const email = session.email.trim().toLowerCase();
 
 		if (!name || typeof name !== 'string' || name.trim() === '') {
 			return fail(400, {
 				name: name ?? '',
-				email: email ?? '',
+				email: email,
 				error: '名前を入力してください'
 			});
 		}
 
-		if (!email || typeof email !== 'string' || email.trim() === '') {
-			return fail(400, {
-				name: name,
-				email: email ?? '',
-				error: 'メールアドレスを入力してください'
-			});
-		}
-
-		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-			return fail(400, {
-				name: name,
-				email: email,
-				error: '有効なメールアドレスを入力してください'
-			});
-		}
-
-		let userId: number;
 		const orgId = organizationId ? Number(organizationId) : null;
 		if (orgId !== null && (!Number.isInteger(orgId) || orgId <= 0)) {
 			return fail(400, {
@@ -54,7 +61,19 @@ export const actions: Actions = {
 				error: '無効な組織IDです'
 			});
 		}
+
 		try {
+			// Check if user already exists
+			const [existingUser] = await db
+				.select()
+				.from(user)
+				.where(and(eq(user.email, email), isNull(user.deletedAt)));
+
+			if (existingUser) {
+				// User already registered, redirect to projects
+				throw redirect(303, '/projects');
+			}
+
 			// Determine role: only assign 'owner' if org exists and has no existing owner
 			let role = 'member';
 			if (orgId) {
@@ -75,18 +94,27 @@ export const actions: Actions = {
 				role = existingOwner ? 'member' : 'owner';
 			}
 
-			const [inserted] = await db
+			// Auth provider from session
+			const authProvider = session.provider ?? 'unknown';
+			const authProviderId = session.uid ?? null;
+
+			await db
 				.insert(user)
 				.values({
 					name: name.trim(),
-					email: email.trim(),
+					email: email,
 					userType: typeof userType === 'string' ? userType : 'personal',
 					role,
-					organizationId: orgId
-				})
-				.returning({ id: user.id });
-			userId = inserted.id;
-		} catch {
+					organizationId: orgId,
+					authProvider,
+					authProviderId
+				});
+		} catch (error) {
+			// If it's a redirect, re-throw it
+			if (error && typeof error === 'object' && 'status' in error && error.status === 303) {
+				throw error;
+			}
+
 			return fail(500, {
 				name: name,
 				email: email,
@@ -94,6 +122,6 @@ export const actions: Actions = {
 			});
 		}
 
-		throw redirect(303, `/projects?userId=${userId}`);
+		throw redirect(303, '/projects');
 	}
 };

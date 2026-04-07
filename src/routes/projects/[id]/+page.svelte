@@ -74,7 +74,6 @@
 		try {
 			const formData = new FormData();
 			formData.set('dbmlContent', content);
-			formData.set('userId', data.userId);
 
 			const response = await fetch(`/projects/${data.project.id}?/save`, {
 				method: 'POST',
@@ -118,7 +117,7 @@
 {#if !hasStarted}
 	<div class="flex h-screen flex-col items-center justify-center bg-gray-50">
 		<div class="mb-4">
-			<a href="/projects?userId={data.userId}" class="text-sm text-gray-500 hover:text-gray-700">
+			<a href="/projects" class="text-sm text-gray-500 hover:text-gray-700">
 				← プロジェクト一覧に戻る
 			</a>
 		</div>
@@ -179,7 +178,7 @@
 			class="flex items-center justify-between border-b border-gray-700 bg-gray-800 px-4 py-2"
 		>
 			<div class="flex items-center gap-3">
-				<a href="/projects?userId={data.userId}" class="text-sm text-gray-400 hover:text-gray-200">
+				<a href="/projects" class="text-sm text-gray-400 hover:text-gray-200">
 					← プロジェクト一覧
 				</a>
 				<span class="text-gray-600">|</span>
