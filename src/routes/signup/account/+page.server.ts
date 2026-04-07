@@ -53,7 +53,6 @@ export const actions: Actions = {
 			});
 		}
 
-		let userId: number;
 		const orgId = organizationId ? Number(organizationId) : null;
 		if (orgId !== null && (!Number.isInteger(orgId) || orgId <= 0)) {
 			return fail(400, {
@@ -99,7 +98,7 @@ export const actions: Actions = {
 			const authProvider = session.provider ?? 'unknown';
 			const authProviderId = session.uid ?? null;
 
-			const [inserted] = await db
+			await db
 				.insert(user)
 				.values({
 					name: name.trim(),
@@ -109,9 +108,7 @@ export const actions: Actions = {
 					organizationId: orgId,
 					authProvider,
 					authProviderId
-				})
-				.returning({ id: user.id });
-			userId = inserted.id;
+				});
 		} catch (error) {
 			// If it's a redirect, re-throw it
 			if (error && typeof error === 'object' && 'status' in error && error.status === 303) {
