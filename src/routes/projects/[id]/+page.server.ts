@@ -10,6 +10,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		throw redirect(303, '/login');
 	}
 
+	const projectId = Number(params.id);
+	if (!Number.isInteger(projectId) || projectId <= 0) {
+		throw redirect(303, '/projects');
+	}
+
 	const [currentUser] = await db
 		.select({ id: user.id })
 		.from(user)
@@ -21,7 +26,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const [proj] = await db
 		.select()
 		.from(project)
-		.where(and(eq(project.id, Number(params.id)), isNull(project.deletedAt)));
+		.where(and(eq(project.id, projectId), isNull(project.deletedAt)));
 	if (!proj) {
 		throw redirect(303, '/projects');
 	}
@@ -39,6 +44,11 @@ export const actions: Actions = {
 		const session = locals.session;
 		if (!session?.email) {
 			return fail(401, { error: '認証が必要です' });
+		}
+
+		const projectId = Number(params.id);
+		if (!Number.isInteger(projectId) || projectId <= 0) {
+			return fail(400, { error: '無効なプロジェクトIDです' });
 		}
 
 		const [currentUser] = await db
@@ -60,7 +70,7 @@ export const actions: Actions = {
 		const [proj] = await db
 			.select({ userId: project.userId })
 			.from(project)
-			.where(and(eq(project.id, Number(params.id)), isNull(project.deletedAt)));
+			.where(and(eq(project.id, projectId), isNull(project.deletedAt)));
 		if (!proj || proj.userId !== currentUser.id) {
 			return fail(403, { error: 'このプロジェクトを編集する権限がありません' });
 		}
@@ -71,7 +81,7 @@ export const actions: Actions = {
 				dbmlContent,
 				updatedAt: new Date()
 			})
-			.where(eq(project.id, Number(params.id)));
+			.where(eq(project.id, projectId));
 
 		return { success: true };
 	}

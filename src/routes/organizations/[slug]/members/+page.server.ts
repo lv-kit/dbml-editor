@@ -21,18 +21,17 @@ async function resolveCurrentUser(locals: App.Locals, orgId: number) {
 		.select()
 		.from(user)
 		.where(
-			and(
-				eq(user.email, session.email),
-				eq(user.organizationId, orgId),
-				isNull(user.deletedAt)
-			)
+			and(eq(user.email, session.email), eq(user.organizationId, orgId), isNull(user.deletedAt))
 		);
 
 	return currentUser ?? null;
 }
 
 export const load: PageServerLoad = async ({ params, locals }) => {
-	const [org] = await db.select().from(organization).where(eq(organization.slug, params.slug));
+	const [org] = await db
+		.select()
+		.from(organization)
+		.where(and(eq(organization.slug, params.slug), isNull(organization.deletedAt)));
 
 	if (!org) {
 		return { error: '組織が見つかりません', org: null, members: [], currentUser: null };
@@ -41,7 +40,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const currentUser = await resolveCurrentUser(locals, org.id);
 
 	if (!currentUser) {
-		redirect(303, '/');
+		throw redirect(303, '/');
 	}
 
 	const members = await db
@@ -59,7 +58,10 @@ export const actions: Actions = {
 		const email = data.get('email');
 		const role = data.get('role');
 
-		const [org] = await db.select().from(organization).where(eq(organization.slug, params.slug));
+		const [org] = await db
+			.select()
+			.from(organization)
+			.where(and(eq(organization.slug, params.slug), isNull(organization.deletedAt)));
 
 		if (!org) {
 			return fail(404, { error: '組織が見つかりません' });
@@ -67,7 +69,11 @@ export const actions: Actions = {
 
 		const currentUser = await resolveCurrentUser(locals, org.id);
 
-		if (!currentUser || !canManageMembers(currentUser.role as MemberRole)) {
+		if (
+			!currentUser ||
+			!validateMemberRole(currentUser.role) ||
+			!canManageMembers(currentUser.role as MemberRole)
+		) {
 			return fail(403, { error: 'メンバーを管理する権限がありません' });
 		}
 
@@ -105,7 +111,10 @@ export const actions: Actions = {
 		const targetUserId = data.get('targetUserId');
 		const newRole = data.get('role');
 
-		const [org] = await db.select().from(organization).where(eq(organization.slug, params.slug));
+		const [org] = await db
+			.select()
+			.from(organization)
+			.where(and(eq(organization.slug, params.slug), isNull(organization.deletedAt)));
 
 		if (!org) {
 			return fail(404, { error: '組織が見つかりません' });
@@ -121,6 +130,11 @@ export const actions: Actions = {
 			return fail(400, { error: 'パラメータが不足しています' });
 		}
 
+		const targetUserIdNum = Number(targetUserId);
+		if (!Number.isInteger(targetUserIdNum) || targetUserIdNum <= 0) {
+			return fail(400, { error: '無効なユーザーIDです' });
+		}
+
 		if (!newRole || typeof newRole !== 'string' || !validateMemberRole(newRole)) {
 			return fail(400, { error: '無効な権限です' });
 		}
@@ -129,11 +143,7 @@ export const actions: Actions = {
 			.select()
 			.from(user)
 			.where(
-				and(
-					eq(user.id, Number(targetUserId)),
-					eq(user.organizationId, org.id),
-					isNull(user.deletedAt)
-				)
+				and(eq(user.id, targetUserIdNum), eq(user.organizationId, org.id), isNull(user.deletedAt))
 			);
 
 		if (!targetUser) {
@@ -141,6 +151,8 @@ export const actions: Actions = {
 		}
 
 		if (
+			!validateMemberRole(currentUser.role) ||
+			!validateMemberRole(targetUser.role) ||
 			!canChangeRole(
 				currentUser.role as MemberRole,
 				targetUser.role as MemberRole,
@@ -152,10 +164,7 @@ export const actions: Actions = {
 		}
 
 		try {
-			await db
-				.update(user)
-				.set({ role: newRole })
-				.where(eq(user.id, Number(targetUserId)));
+			await db.update(user).set({ role: newRole }).where(eq(user.id, targetUserIdNum));
 		} catch {
 			return fail(500, { error: '権限の変更に失敗しました' });
 		}
@@ -167,7 +176,10 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const targetUserId = data.get('targetUserId');
 
-		const [org] = await db.select().from(organization).where(eq(organization.slug, params.slug));
+		const [org] = await db
+			.select()
+			.from(organization)
+			.where(and(eq(organization.slug, params.slug), isNull(organization.deletedAt)));
 
 		if (!org) {
 			return fail(404, { error: '組織が見つかりません' });
@@ -183,22 +195,27 @@ export const actions: Actions = {
 			return fail(400, { error: 'パラメータが不足しています' });
 		}
 
+		const targetUserIdNum = Number(targetUserId);
+		if (!Number.isInteger(targetUserIdNum) || targetUserIdNum <= 0) {
+			return fail(400, { error: '無効なユーザーIDです' });
+		}
+
 		const [targetUser] = await db
 			.select()
 			.from(user)
 			.where(
-				and(
-					eq(user.id, Number(targetUserId)),
-					eq(user.organizationId, org.id),
-					isNull(user.deletedAt)
-				)
+				and(eq(user.id, targetUserIdNum), eq(user.organizationId, org.id), isNull(user.deletedAt))
 			);
 
 		if (!targetUser) {
 			return fail(404, { error: 'ユーザーが見つかりません' });
 		}
 
-		if (!canRemoveMember(currentUser.role as MemberRole, targetUser.role as MemberRole)) {
+		if (
+			!validateMemberRole(currentUser.role) ||
+			!validateMemberRole(targetUser.role) ||
+			!canRemoveMember(currentUser.role as MemberRole, targetUser.role as MemberRole)
+		) {
 			return fail(403, { error: 'メンバーを削除する権限がありません' });
 		}
 
@@ -206,7 +223,7 @@ export const actions: Actions = {
 			await db
 				.update(user)
 				.set({ deletedAt: new Date() })
-				.where(and(eq(user.id, Number(targetUserId)), isNull(user.deletedAt)));
+				.where(and(eq(user.id, targetUserIdNum), isNull(user.deletedAt)));
 		} catch {
 			return fail(500, { error: 'メンバーの削除に失敗しました' });
 		}

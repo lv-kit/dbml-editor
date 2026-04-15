@@ -17,11 +17,16 @@ async function getCurrentUser(event: { locals: App.Locals }) {
 	const [currentUser] = await db
 		.select({ id: user.id, role: user.role, organizationId: user.organizationId })
 		.from(user)
-		.where(eq(user.email, session.email));
+		.where(and(eq(user.email, session.email), isNull(user.deletedAt)));
 	return currentUser;
 }
 
 export const load: PageServerLoad = async ({ params, locals }) => {
+	const orgId = Number(params.id);
+	if (!Number.isInteger(orgId) || orgId <= 0) {
+		throw redirect(303, '/organizations');
+	}
+
 	const currentUser = await getCurrentUser({ locals });
 	if (!currentUser) {
 		throw redirect(303, '/signup');
@@ -30,7 +35,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const [org] = await db
 		.select()
 		.from(organization)
-		.where(and(eq(organization.id, Number(params.id)), isNull(organization.deletedAt)));
+		.where(and(eq(organization.id, orgId), isNull(organization.deletedAt)));
 
 	if (!org) {
 		throw redirect(303, '/organizations');
@@ -44,13 +49,18 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const members = await db
 		.select({ id: user.id, name: user.name, email: user.email, role: user.role })
 		.from(user)
-		.where(eq(user.organizationId, org.id));
+		.where(and(eq(user.organizationId, org.id), isNull(user.deletedAt)));
 
 	return { organization: org, members, currentUser };
 };
 
 export const actions: Actions = {
 	addAdmin: async ({ request, params, locals }) => {
+		const orgId = Number(params.id);
+		if (!Number.isInteger(orgId) || orgId <= 0) {
+			return fail(400, { error: '無効な組織IDです' });
+		}
+
 		const currentUser = await getCurrentUser({ locals });
 		if (!currentUser) {
 			return fail(401, { error: '認証が必要です' });
@@ -65,7 +75,7 @@ export const actions: Actions = {
 
 		const repo = createOrganizationRepository(db);
 		const result = await addOrganizationAdmin(repo, {
-			organizationId: Number(params.id),
+			organizationId: orgId,
 			requestingUserId: currentUser.id,
 			targetUserEmail: email.trim()
 		});
@@ -78,6 +88,11 @@ export const actions: Actions = {
 	},
 
 	delete: async ({ params, locals }) => {
+		const orgId = Number(params.id);
+		if (!Number.isInteger(orgId) || orgId <= 0) {
+			return fail(400, { error: '無効な組織IDです' });
+		}
+
 		const currentUser = await getCurrentUser({ locals });
 		if (!currentUser) {
 			return fail(401, { error: '認証が必要です' });
@@ -85,7 +100,7 @@ export const actions: Actions = {
 
 		const repo = createOrganizationRepository(db);
 		const result = await deleteOrganization(repo, {
-			organizationId: Number(params.id),
+			organizationId: orgId,
 			requestingUserId: currentUser.id
 		});
 

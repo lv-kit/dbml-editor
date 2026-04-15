@@ -4,7 +4,12 @@ import { organization } from '$lib/server/db/schema';
 import type { Actions } from './$types';
 
 export const actions: Actions = {
-	default: async ({ request }) => {
+	default: async ({ request, locals }) => {
+		const session = locals.session;
+		if (!session?.email) {
+			return fail(401, { name: '', slug: '', error: '認証が必要です' });
+		}
+
 		const data = await request.formData();
 		const name = data.get('name');
 		const slug = data.get('slug');
