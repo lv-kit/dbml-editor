@@ -53,6 +53,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 export const actions: Actions = {
 	add: async ({ request, params, locals }) => {
+		const session = locals.session;
+		if (!session?.email) {
+			return fail(401, { error: '認証が必要です' });
+		}
+
 		const data = await request.formData();
 		const name = data.get('name');
 		const email = data.get('email');
@@ -107,6 +112,11 @@ export const actions: Actions = {
 	},
 
 	updateRole: async ({ request, params, locals }) => {
+		const session = locals.session;
+		if (!session?.email) {
+			return fail(401, { error: '認証が必要です' });
+		}
+
 		const data = await request.formData();
 		const targetUserId = data.get('targetUserId');
 		const newRole = data.get('role');
@@ -123,7 +133,7 @@ export const actions: Actions = {
 		const currentUser = await resolveCurrentUser(locals, org.id);
 
 		if (!currentUser) {
-			return fail(403, { error: '認証が必要です' });
+			return fail(403, { error: '権限がありません' });
 		}
 
 		if (!targetUserId) {
@@ -183,6 +193,11 @@ export const actions: Actions = {
 	},
 
 	remove: async ({ request, params, locals }) => {
+		const session = locals.session;
+		if (!session?.email) {
+			return fail(401, { error: '認証が必要です' });
+		}
+
 		const data = await request.formData();
 		const targetUserId = data.get('targetUserId');
 
@@ -198,7 +213,7 @@ export const actions: Actions = {
 		const currentUser = await resolveCurrentUser(locals, org.id);
 
 		if (!currentUser) {
-			return fail(403, { error: '認証が必要です' });
+			return fail(403, { error: '権限がありません' });
 		}
 
 		if (!targetUserId) {
@@ -233,7 +248,9 @@ export const actions: Actions = {
 			await db
 				.update(user)
 				.set({ deletedAt: new Date() })
-				.where(and(eq(user.id, targetUserIdNum), isNull(user.deletedAt)));
+				.where(
+					and(eq(user.id, targetUserIdNum), eq(user.organizationId, org.id), isNull(user.deletedAt))
+				);
 		} catch {
 			return fail(500, { error: 'メンバーの削除に失敗しました' });
 		}

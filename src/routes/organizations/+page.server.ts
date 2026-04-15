@@ -4,10 +4,11 @@ import { organization, user } from '$lib/server/db/schema';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	const session = locals.session;
 	if (!session?.email) {
-		throw redirect(303, '/login');
+		const returnTo = encodeURIComponent(url.pathname + url.search);
+		throw redirect(303, `/login?returnTo=${returnTo}`);
 	}
 
 	const [currentUser] = await db

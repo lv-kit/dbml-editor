@@ -49,21 +49,29 @@ export function createOrganizationRepository(db: DbClient): OrganizationReposito
 			const [u] = await db
 				.select({ id: user.id, role: user.role })
 				.from(user)
-				.where(and(eq(user.id, userId), eq(user.organizationId, organizationId)));
+				.where(
+					and(eq(user.id, userId), eq(user.organizationId, organizationId), isNull(user.deletedAt))
+				);
 			return u;
 		},
 		async findUserByEmail(email: string) {
 			const [u] = await db
 				.select({ id: user.id, organizationId: user.organizationId })
 				.from(user)
-				.where(eq(user.email, email));
+				.where(and(eq(user.email, email), isNull(user.deletedAt)));
 			return u;
 		},
 		async updateUserRole(userId: number, role: string, organizationId: number) {
-			await db.update(user).set({ role, organizationId }).where(eq(user.id, userId));
+			await db
+				.update(user)
+				.set({ role, organizationId })
+				.where(and(eq(user.id, userId), isNull(user.deletedAt)));
 		},
 		async findUserIdsByOrganization(organizationId: number) {
-			return db.select({ id: user.id }).from(user).where(eq(user.organizationId, organizationId));
+			return db
+				.select({ id: user.id })
+				.from(user)
+				.where(and(eq(user.organizationId, organizationId), isNull(user.deletedAt)));
 		},
 		async softDeleteProjectsByUserId(userId: number, deletedAt: Date) {
 			await db
