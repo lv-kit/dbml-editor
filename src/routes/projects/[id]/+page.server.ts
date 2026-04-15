@@ -75,13 +75,18 @@ export const actions: Actions = {
 			return fail(403, { error: 'このプロジェクトを編集する権限がありません' });
 		}
 
-		await db
+		const updatedProjects = await db
 			.update(project)
 			.set({
 				dbmlContent,
 				updatedAt: new Date()
 			})
-			.where(eq(project.id, projectId));
+			.where(and(eq(project.id, projectId), isNull(project.deletedAt)))
+			.returning({ id: project.id });
+
+		if (updatedProjects.length === 0) {
+			return fail(404, { error: 'プロジェクトが見つかりません' });
+		}
 
 		return { success: true };
 	}

@@ -164,7 +164,17 @@ export const actions: Actions = {
 		}
 
 		try {
-			await db.update(user).set({ role: newRole }).where(eq(user.id, targetUserIdNum));
+			const updatedUsers = await db
+				.update(user)
+				.set({ role: newRole })
+				.where(
+					and(eq(user.id, targetUserIdNum), eq(user.organizationId, org.id), isNull(user.deletedAt))
+				)
+				.returning({ id: user.id });
+
+			if (updatedUsers.length === 0) {
+				return fail(404, { error: 'ユーザーが見つかりません' });
+			}
 		} catch {
 			return fail(500, { error: '権限の変更に失敗しました' });
 		}

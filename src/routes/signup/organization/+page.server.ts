@@ -1,7 +1,15 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { organization } from '$lib/server/db/schema';
-import type { Actions } from './$types';
+import type { Actions, PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async ({ locals, url }) => {
+	const session = locals.session;
+	if (!session?.email) {
+		const returnTo = encodeURIComponent(url.pathname + url.search);
+		throw redirect(303, `/login?returnTo=${returnTo}`);
+	}
+};
 
 export const actions: Actions = {
 	default: async ({ request, locals }) => {

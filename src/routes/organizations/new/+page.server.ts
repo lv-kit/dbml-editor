@@ -1,13 +1,31 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { organization } from '$lib/server/db/schema';
-import type { Actions } from './$types';
+import { organization, user } from '$lib/server/db/schema';
+import { and, eq, isNull } from 'drizzle-orm';
+import type { Actions, PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async ({ locals, url }) => {
+	const session = locals.session;
+	if (!session?.email) {
+		const returnTo = encodeURIComponent(url.pathname + url.search);
+		throw redirect(303, `/login?returnTo=${returnTo}`);
+	}
+};
 
 export const actions: Actions = {
 	default: async ({ request, locals }) => {
 		const session = locals.session;
 		if (!session?.email) {
 			return fail(401, { name: '', slug: '', error: '認証が必要です' });
+		}
+
+		const [currentUser] = await db
+			.select({ id: user.id })
+			.from(user)
+			.where(and(eq(user.email, session.email), isNull(user.deletedAt)));
+
+		if (!currentUser) {
+			return fail(401, { name: '', slug: '', error: 'ユーザーが見つかりません' });
 		}
 
 		const data = await request.formData();

@@ -19,10 +19,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/signup');
 	}
 
-	const organizations = await db
-		.select()
-		.from(organization)
-		.where(isNull(organization.deletedAt))
-		.orderBy(asc(organization.createdAt));
+	const organizations = currentUser.organizationId
+		? await db
+				.select()
+				.from(organization)
+				.where(and(eq(organization.id, currentUser.organizationId), isNull(organization.deletedAt)))
+				.orderBy(asc(organization.createdAt))
+		: [];
 	return { organizations };
 };
