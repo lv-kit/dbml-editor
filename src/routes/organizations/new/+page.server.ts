@@ -52,16 +52,31 @@ export const actions: Actions = {
 			});
 		}
 
-		let newOrg: { id: number };
 		try {
-			const [created] = await db
-				.insert(organization)
-				.values({
-					name: name.trim(),
-					slug: slug.trim()
-				})
-				.returning({ id: organization.id });
-			newOrg = created;
+			await db.transaction(async (tx) => {
+				const [created] = await tx
+					.insert(organization)
+					.values({
+						name: name.trim(),
+						slug: slug.trim()
+					})
+					.returning({ id: organization.id });
+
+				if (!created) {
+					tx.rollback();
+					return;
+				}
+
+				const updatedUsers = await tx
+					.update(user)
+					.set({ organizationId: created.id, role: 'owner' })
+					.where(and(eq(user.id, currentUser.id), isNull(user.deletedAt)))
+					.returning({ id: user.id });
+
+				if (updatedUsers.length === 0) {
+					tx.rollback();
+				}
+			});
 		} catch {
 			return fail(500, {
 				name: name,
@@ -69,11 +84,6 @@ export const actions: Actions = {
 				error: '組織の作成に失敗しました'
 			});
 		}
-
-		await db
-			.update(user)
-			.set({ organizationId: newOrg.id, role: 'owner' })
-			.where(eq(user.id, currentUser.id));
 
 		throw redirect(303, '/organizations');
 	}
