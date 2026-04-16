@@ -1,4 +1,4 @@
-import { fail, redirect } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { organization, user } from '$lib/server/db/schema';
 import { eq, and, isNull } from 'drizzle-orm';
@@ -27,7 +27,13 @@ async function resolveCurrentUser(locals: App.Locals, orgId: number) {
 	return currentUser ?? null;
 }
 
-export const load: PageServerLoad = async ({ params, locals }) => {
+export const load: PageServerLoad = async ({ params, locals, url }) => {
+	const session = locals.session;
+	if (!session?.email) {
+		const returnTo = encodeURIComponent(url.pathname + url.search);
+		throw redirect(303, `/login?returnTo=${returnTo}`);
+	}
+
 	const [org] = await db
 		.select()
 		.from(organization)
@@ -40,7 +46,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const currentUser = await resolveCurrentUser(locals, org.id);
 
 	if (!currentUser) {
-		throw redirect(303, '/');
+		throw error(403, 'この組織へのアクセス権がありません');
 	}
 
 	const members = await db

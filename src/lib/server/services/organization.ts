@@ -1,4 +1,4 @@
-import { eq, and, isNull, or } from 'drizzle-orm';
+import { eq, and, isNull, or, sql } from 'drizzle-orm';
 import { organization, user, project } from '$lib/server/db/schema';
 import type { DbClient } from '$lib/server/db';
 
@@ -59,7 +59,7 @@ export function createOrganizationRepository(db: DbClient): OrganizationReposito
 			const [u] = await db
 				.select({ id: user.id, organizationId: user.organizationId })
 				.from(user)
-				.where(and(eq(user.email, normalizedEmail), isNull(user.deletedAt)));
+				.where(and(sql`lower(${user.email}) = ${normalizedEmail}`, isNull(user.deletedAt)));
 			return u;
 		},
 		async updateUserRole(userId: number, role: string, organizationId: number) {
