@@ -12,7 +12,7 @@ function createMockRepo(overrides: Partial<OrganizationRepository> = {}): Organi
 		findOrganizationById: vi.fn().mockResolvedValue(undefined),
 		findUserInOrganization: vi.fn().mockResolvedValue(undefined),
 		findUserByEmail: vi.fn().mockResolvedValue(undefined),
-		updateUserRole: vi.fn().mockResolvedValue(undefined),
+		updateUserRole: vi.fn().mockResolvedValue([{ id: 1 }]),
 		findUserIdsByOrganization: vi.fn().mockResolvedValue([]),
 		softDeleteProjectsByUserId: vi.fn().mockResolvedValue(undefined),
 		softDeleteOrganization: vi.fn().mockResolvedValue(undefined),

@@ -245,12 +245,17 @@ export const actions: Actions = {
 		}
 
 		try {
-			await db
+			const removed = await db
 				.update(user)
 				.set({ deletedAt: new Date() })
 				.where(
 					and(eq(user.id, targetUserIdNum), eq(user.organizationId, org.id), isNull(user.deletedAt))
-				);
+				)
+				.returning({ id: user.id });
+
+			if (removed.length === 0) {
+				return fail(404, { error: 'ユーザーが見つかりません' });
+			}
 		} catch {
 			return fail(500, { error: 'メンバーの削除に失敗しました' });
 		}

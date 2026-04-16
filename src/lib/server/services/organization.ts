@@ -1,4 +1,4 @@
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and, isNull, or } from 'drizzle-orm';
 import { organization, user, project } from '$lib/server/db/schema';
 import type { DbClient } from '$lib/server/db';
 
@@ -62,10 +62,18 @@ export function createOrganizationRepository(db: DbClient): OrganizationReposito
 			return u;
 		},
 		async updateUserRole(userId: number, role: string, organizationId: number) {
-			await db
+			const updated = await db
 				.update(user)
 				.set({ role, organizationId })
-				.where(and(eq(user.id, userId), isNull(user.deletedAt)));
+				.where(
+					and(
+						eq(user.id, userId),
+						isNull(user.deletedAt),
+						or(isNull(user.organizationId), eq(user.organizationId, organizationId))
+					)
+				)
+				.returning({ id: user.id });
+			return updated;
 		},
 		async findUserIdsByOrganization(organizationId: number) {
 			return db.select({ id: user.id }).from(user).where(eq(user.organizationId, organizationId));
@@ -120,7 +128,10 @@ export async function addOrganizationAdmin(
 	}
 
 	// Update target user's role and organization
-	await repo.updateUserRole(targetUser.id, 'admin', organizationId);
+	const updated = await repo.updateUserRole(targetUser.id, 'admin', organizationId);
+	if (updated.length === 0) {
+		return { success: false, error: 'ユーザーの更新に失敗しました' };
+	}
 
 	return { success: true };
 }
