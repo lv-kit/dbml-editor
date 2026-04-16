@@ -8,6 +8,25 @@
 
 - Please avoid implementations that could lead to security vulnerabilities.
 - Please handle matters that are better dealt with on the server side on the server side.
+- 要件漏れがありそうな場合は、実装前に指摘する
+- AI エージェントが読み書きしやすい命名・構造・記述を優先する
+- SOLID 原則に従って実装する
+- TDD を最優先する
+- deprecated は一切利用しない
+- 修正後に必ずtestを実施し、すべてのテストにパスすることを確認してください
+- 各言語毎の Linter / Prettier に沿ったコード記述をしてください
+- 1ファイル毎のサイズが大きくな李すぎないように可読性を保てる範囲内でファイル分割をしてください
+- TypeScript を使用する。
+- ESLint とエディタのフォーマッタを利用して、すべてのコードのスタイルを統一する。
+- パッケージマネージャーは bun を利用する。
+- UI は shadcn を最優先で利用し、TailwindCSS と組み合わせて使う。
+- 視認性は極力よくしてください。テキストの色と背景の色が似すぎていて見えないなどはNGです。
+- Secondary Color は Primary Color に合う色味を使う（一度適用したら固定）。
+- ページの背景色は Primary Color が映える色味を使う（一度適用したら固定）。
+- component 分割は可読性を保てる範囲内でできるだけ行ってください
+- 全てのパスが通ったら最後に必ず変更したファイルに関連する画面のスクリーンショットを撮影してください。スクショ時に日本語フォントが文字化けすることが無いように。
+- 動作確認は必ず docker compose up --build で起動したあとにdocker内でテストをするようにして。
+- もし docker compose up --build を立ち上げる際にエラーやワーニングが出ればでなくなるまでトライアンドエラーして。
 
 ## スクリーンショットルール
 
