@@ -123,6 +123,11 @@ export async function addOrganizationAdmin(
 		return { success: false, error: '指定されたメールアドレスのユーザーが見つかりません' };
 	}
 
+	// Prevent self-role update (owner downgrading themselves to admin)
+	if (targetUser.id === requestingUserId) {
+		return { success: false, error: '自分自身のロールは変更できません' };
+	}
+
 	// Prevent moving users from another organization
 	if (targetUser.organizationId && targetUser.organizationId !== organizationId) {
 		return { success: false, error: 'このユーザーは別の組織に所属しています' };
