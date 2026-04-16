@@ -113,7 +113,7 @@ export const actions: Actions = {
 			const [existingUser] = await db
 				.select({ id: user.id })
 				.from(user)
-				.where(sql`lower(${user.email}) = ${normalizedInsertEmail}`);
+				.where(and(sql`lower(${user.email}) = ${normalizedInsertEmail}`, isNull(user.deletedAt)));
 
 			if (existingUser) {
 				return fail(409, { error: 'このメールアドレスは既に登録されています' });
