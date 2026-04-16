@@ -55,10 +55,11 @@ export function createOrganizationRepository(db: DbClient): OrganizationReposito
 			return u;
 		},
 		async findUserByEmail(email: string) {
+			const normalizedEmail = email.trim().toLowerCase();
 			const [u] = await db
 				.select({ id: user.id, organizationId: user.organizationId })
 				.from(user)
-				.where(and(eq(user.email, email), isNull(user.deletedAt)));
+				.where(and(eq(user.email, normalizedEmail), isNull(user.deletedAt)));
 			return u;
 		},
 		async updateUserRole(userId: number, role: string, organizationId: number) {

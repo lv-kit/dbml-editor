@@ -104,7 +104,11 @@ export const actions: Actions = {
 				role: memberRole,
 				organizationId: org.id
 			});
-		} catch {
+		} catch (err) {
+			const pgCode = (err as { code?: string })?.code;
+			if (pgCode === '23505') {
+				return fail(409, { error: 'このメールアドレスは既に登録されています' });
+			}
 			return fail(500, { error: 'メンバーの追加に失敗しました' });
 		}
 
