@@ -1,7 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { organization, user } from '$lib/server/db/schema';
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and, isNull, sql } from 'drizzle-orm';
 import {
 	canManageMembers,
 	canChangeRole,
@@ -17,11 +17,16 @@ async function resolveCurrentUser(locals: App.Locals, orgId: number) {
 	const session = locals.session;
 	if (!session?.email) return null;
 
+	const normalizedEmail = session.email.trim().toLowerCase();
 	const [currentUser] = await db
 		.select()
 		.from(user)
 		.where(
-			and(eq(user.email, session.email), eq(user.organizationId, orgId), isNull(user.deletedAt))
+			and(
+				sql`lower(${user.email}) = ${normalizedEmail}`,
+				eq(user.organizationId, orgId),
+				isNull(user.deletedAt)
+			)
 		);
 
 	return currentUser ?? null;
@@ -103,9 +108,20 @@ export const actions: Actions = {
 		}
 
 		try {
+			const normalizedInsertEmail = email.trim().toLowerCase();
+
+			const [existingUser] = await db
+				.select({ id: user.id })
+				.from(user)
+				.where(sql`lower(${user.email}) = ${normalizedInsertEmail}`);
+
+			if (existingUser) {
+				return fail(409, { error: 'このメールアドレスは既に登録されています' });
+			}
+
 			await db.insert(user).values({
 				name: name.trim(),
-				email: email.trim().toLowerCase(),
+				email: normalizedInsertEmail,
 				userType: 'corporate',
 				role: memberRole,
 				organizationId: org.id

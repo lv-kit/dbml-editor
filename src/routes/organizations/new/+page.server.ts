@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { organization, user } from '$lib/server/db/schema';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -10,6 +10,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		const returnTo = encodeURIComponent(url.pathname + url.search);
 		throw redirect(303, `/login?returnTo=${returnTo}`);
 	}
+
+	return {};
 };
 
 export const actions: Actions = {
@@ -19,10 +21,11 @@ export const actions: Actions = {
 			return fail(401, { name: '', slug: '', error: '認証が必要です' });
 		}
 
+		const normalizedEmail = session.email.trim().toLowerCase();
 		const [currentUser] = await db
 			.select({ id: user.id })
 			.from(user)
-			.where(and(eq(user.email, session.email), isNull(user.deletedAt)));
+			.where(and(sql`lower(${user.email}) = ${normalizedEmail}`, isNull(user.deletedAt)));
 
 		if (!currentUser) {
 			return fail(401, { name: '', slug: '', error: 'ユーザーが見つかりません' });
