@@ -68,10 +68,7 @@ export function createOrganizationRepository(db: DbClient): OrganizationReposito
 				.where(and(eq(user.id, userId), isNull(user.deletedAt)));
 		},
 		async findUserIdsByOrganization(organizationId: number) {
-			return db
-				.select({ id: user.id })
-				.from(user)
-				.where(and(eq(user.organizationId, organizationId), isNull(user.deletedAt)));
+			return db.select({ id: user.id }).from(user).where(eq(user.organizationId, organizationId));
 		},
 		async softDeleteProjectsByUserId(userId: number, deletedAt: Date) {
 			await db
