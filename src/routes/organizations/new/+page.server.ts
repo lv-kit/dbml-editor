@@ -52,11 +52,16 @@ export const actions: Actions = {
 			});
 		}
 
+		let newOrg: { id: number };
 		try {
-			await db.insert(organization).values({
-				name: name.trim(),
-				slug: slug.trim()
-			});
+			const [created] = await db
+				.insert(organization)
+				.values({
+					name: name.trim(),
+					slug: slug.trim()
+				})
+				.returning({ id: organization.id });
+			newOrg = created;
 		} catch {
 			return fail(500, {
 				name: name,
@@ -64,6 +69,11 @@ export const actions: Actions = {
 				error: '組織の作成に失敗しました'
 			});
 		}
+
+		await db
+			.update(user)
+			.set({ organizationId: newOrg.id, role: 'owner' })
+			.where(eq(user.id, currentUser.id));
 
 		throw redirect(303, '/organizations');
 	}

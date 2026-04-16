@@ -99,7 +99,7 @@ export const actions: Actions = {
 		try {
 			await db.insert(user).values({
 				name: name.trim(),
-				email: email.trim(),
+				email: email.trim().toLowerCase(),
 				userType: 'corporate',
 				role: memberRole,
 				organizationId: org.id

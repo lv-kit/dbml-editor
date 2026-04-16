@@ -27,7 +27,7 @@ export interface OrganizationRepository {
 	findUserByEmail(
 		email: string
 	): Promise<{ id: number; organizationId: number | null } | undefined>;
-	updateUserRole(userId: number, role: string, organizationId: number): Promise<void>;
+	updateUserRole(userId: number, role: string, organizationId: number): Promise<{ id: number }[]>;
 	findUserIdsByOrganization(organizationId: number): Promise<{ id: number }[]>;
 	softDeleteProjectsByUserId(userId: number, deletedAt: Date): Promise<void>;
 	softDeleteOrganization(organizationId: number, deletedAt: Date): Promise<void>;

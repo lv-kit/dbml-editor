@@ -168,6 +168,24 @@ describe('addOrganizationAdmin', () => {
 		expect(result.error).toBe('このユーザーは別の組織に所属しています');
 	});
 
+	it('should fail when updateUserRole returns empty (TOCTOU: user moved to another org)', async () => {
+		const repo = createMockRepo({
+			findOrganizationById: vi.fn().mockResolvedValue({ id: 1 }),
+			findUserInOrganization: vi.fn().mockResolvedValue({ id: 1, role: 'owner' }),
+			findUserByEmail: vi.fn().mockResolvedValue({ id: 2, organizationId: null }),
+			updateUserRole: vi.fn().mockResolvedValue([])
+		});
+
+		const result = await addOrganizationAdmin(repo, {
+			organizationId: 1,
+			requestingUserId: 1,
+			targetUserEmail: 'raced@example.com'
+		});
+
+		expect(result.success).toBe(false);
+		expect(result.error).toBe('ユーザーの更新に失敗しました');
+	});
+
 	it('should succeed when target user already belongs to the same organization', async () => {
 		const repo = createMockRepo({
 			findOrganizationById: vi.fn().mockResolvedValue({ id: 1 }),
