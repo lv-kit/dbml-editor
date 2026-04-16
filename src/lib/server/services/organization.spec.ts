@@ -12,7 +12,7 @@ function createMockRepo(overrides: Partial<OrganizationRepository> = {}): Organi
 		findOrganizationById: vi.fn().mockResolvedValue(undefined),
 		findUserInOrganization: vi.fn().mockResolvedValue(undefined),
 		findUserByEmail: vi.fn().mockResolvedValue(undefined),
-		updateUserRole: vi.fn().mockResolvedValue(undefined),
+		updateUserRole: vi.fn().mockResolvedValue([{ id: 1 }]),
 		findUserIdsByOrganization: vi.fn().mockResolvedValue([]),
 		softDeleteProjectsByUserId: vi.fn().mockResolvedValue(undefined),
 		softDeleteOrganization: vi.fn().mockResolvedValue(undefined),
@@ -166,6 +166,42 @@ describe('addOrganizationAdmin', () => {
 
 		expect(result.success).toBe(false);
 		expect(result.error).toBe('このユーザーは別の組織に所属しています');
+	});
+
+	it('should fail when updateUserRole returns empty (TOCTOU: user moved to another org)', async () => {
+		const repo = createMockRepo({
+			findOrganizationById: vi.fn().mockResolvedValue({ id: 1 }),
+			findUserInOrganization: vi.fn().mockResolvedValue({ id: 1, role: 'owner' }),
+			findUserByEmail: vi.fn().mockResolvedValue({ id: 2, organizationId: null }),
+			updateUserRole: vi.fn().mockResolvedValue([])
+		});
+
+		const result = await addOrganizationAdmin(repo, {
+			organizationId: 1,
+			requestingUserId: 1,
+			targetUserEmail: 'raced@example.com'
+		});
+
+		expect(result.success).toBe(false);
+		expect(result.error).toBe('ユーザーの更新に失敗しました');
+	});
+
+	it('should fail when requesting user tries to update their own role (self-update)', async () => {
+		const repo = createMockRepo({
+			findOrganizationById: vi.fn().mockResolvedValue({ id: 1 }),
+			findUserInOrganization: vi.fn().mockResolvedValue({ id: 1, role: 'owner' }),
+			findUserByEmail: vi.fn().mockResolvedValue({ id: 1, organizationId: 1 })
+		});
+
+		const result = await addOrganizationAdmin(repo, {
+			organizationId: 1,
+			requestingUserId: 1,
+			targetUserEmail: 'owner@example.com'
+		});
+
+		expect(result.success).toBe(false);
+		expect(result.error).toBe('自分自身のロールは変更できません');
+		expect(repo.updateUserRole).not.toHaveBeenCalled();
 	});
 
 	it('should succeed when target user already belongs to the same organization', async () => {

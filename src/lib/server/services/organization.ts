@@ -1,4 +1,4 @@
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and, isNull, or, sql } from 'drizzle-orm';
 import { organization, user, project } from '$lib/server/db/schema';
 import type { DbClient } from '$lib/server/db';
 
@@ -27,7 +27,7 @@ export interface OrganizationRepository {
 	findUserByEmail(
 		email: string
 	): Promise<{ id: number; organizationId: number | null } | undefined>;
-	updateUserRole(userId: number, role: string, organizationId: number): Promise<void>;
+	updateUserRole(userId: number, role: string, organizationId: number): Promise<{ id: number }[]>;
 	findUserIdsByOrganization(organizationId: number): Promise<{ id: number }[]>;
 	softDeleteProjectsByUserId(userId: number, deletedAt: Date): Promise<void>;
 	softDeleteOrganization(organizationId: number, deletedAt: Date): Promise<void>;
@@ -49,18 +49,32 @@ export function createOrganizationRepository(db: DbClient): OrganizationReposito
 			const [u] = await db
 				.select({ id: user.id, role: user.role })
 				.from(user)
-				.where(and(eq(user.id, userId), eq(user.organizationId, organizationId)));
+				.where(
+					and(eq(user.id, userId), eq(user.organizationId, organizationId), isNull(user.deletedAt))
+				);
 			return u;
 		},
 		async findUserByEmail(email: string) {
+			const normalizedEmail = email.trim().toLowerCase();
 			const [u] = await db
 				.select({ id: user.id, organizationId: user.organizationId })
 				.from(user)
-				.where(eq(user.email, email));
+				.where(and(sql`lower(${user.email}) = ${normalizedEmail}`, isNull(user.deletedAt)));
 			return u;
 		},
 		async updateUserRole(userId: number, role: string, organizationId: number) {
-			await db.update(user).set({ role, organizationId }).where(eq(user.id, userId));
+			const updated = await db
+				.update(user)
+				.set({ role, organizationId })
+				.where(
+					and(
+						eq(user.id, userId),
+						isNull(user.deletedAt),
+						or(isNull(user.organizationId), eq(user.organizationId, organizationId))
+					)
+				)
+				.returning({ id: user.id });
+			return updated;
 		},
 		async findUserIdsByOrganization(organizationId: number) {
 			return db.select({ id: user.id }).from(user).where(eq(user.organizationId, organizationId));
@@ -109,13 +123,21 @@ export async function addOrganizationAdmin(
 		return { success: false, error: '指定されたメールアドレスのユーザーが見つかりません' };
 	}
 
+	// Prevent self-role update (owner downgrading themselves to admin)
+	if (targetUser.id === requestingUserId) {
+		return { success: false, error: '自分自身のロールは変更できません' };
+	}
+
 	// Prevent moving users from another organization
 	if (targetUser.organizationId && targetUser.organizationId !== organizationId) {
 		return { success: false, error: 'このユーザーは別の組織に所属しています' };
 	}
 
 	// Update target user's role and organization
-	await repo.updateUserRole(targetUser.id, 'admin', organizationId);
+	const updated = await repo.updateUserRole(targetUser.id, 'admin', organizationId);
+	if (updated.length === 0) {
+		return { success: false, error: 'ユーザーの更新に失敗しました' };
+	}
 
 	return { success: true };
 }
