@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { organization, user } from '$lib/server/db/schema';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import {
 	createOrganizationRepository,
 	addOrganizationAdmin,
@@ -14,10 +14,11 @@ async function getCurrentUser(event: { locals: App.Locals }) {
 	if (!session?.email) {
 		return undefined;
 	}
+	const normalizedEmail = session.email.trim().toLowerCase();
 	const [currentUser] = await db
 		.select({ id: user.id, role: user.role, organizationId: user.organizationId })
 		.from(user)
-		.where(and(eq(user.email, session.email), isNull(user.deletedAt)));
+		.where(and(sql`lower(${user.email}) = ${normalizedEmail}`, isNull(user.deletedAt)));
 	return currentUser;
 }
 
