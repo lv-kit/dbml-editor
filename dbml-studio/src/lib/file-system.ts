@@ -1,9 +1,10 @@
+import { isTauri } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
 
 export interface DbmlDocument {
 	content: string;
-	path: string;
+	path: string | null;
 	fileName: string;
 }
 
@@ -21,7 +22,15 @@ export function ensureDbmlExtension(path: string): string {
 	return path.toLowerCase().endsWith('.dbml') ? path : `${path}.dbml`;
 }
 
+export function isTauriRuntime(): boolean {
+	return isTauri();
+}
+
 export async function openDbmlFile(): Promise<DbmlDocument | null> {
+	if (!isTauriRuntime()) {
+		throw new Error('Tauri環境ではないため、ネイティブファイルダイアログを使用できません');
+	}
+
 	const selected = await open({
 		multiple: false,
 		directory: false,
@@ -35,6 +44,14 @@ export async function openDbmlFile(): Promise<DbmlDocument | null> {
 		content,
 		path: selected,
 		fileName: getFileName(selected)
+	};
+}
+
+export async function readBrowserDbmlFile(file: File): Promise<DbmlDocument> {
+	return {
+		content: await file.text(),
+		path: null,
+		fileName: file.name || 'untitled.dbml'
 	};
 }
 

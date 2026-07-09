@@ -1,10 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const tauriMocks = vi.hoisted(() => ({
+	isTauri: vi.fn(),
 	open: vi.fn(),
 	save: vi.fn(),
 	readTextFile: vi.fn(),
 	writeTextFile: vi.fn()
+}));
+
+vi.mock('@tauri-apps/api/core', () => ({
+	isTauri: tauriMocks.isTauri
 }));
 
 vi.mock('@tauri-apps/plugin-dialog', () => ({
@@ -20,7 +25,9 @@ vi.mock('@tauri-apps/plugin-fs', () => ({
 import {
 	ensureDbmlExtension,
 	getFileName,
+	isTauriRuntime,
 	openDbmlFile,
+	readBrowserDbmlFile,
 	saveDbmlFile,
 	saveDbmlFileAs
 } from './file-system';
@@ -28,6 +35,7 @@ import {
 describe('file-system', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		tauriMocks.isTauri.mockReturnValue(true);
 	});
 
 	it('extracts file names from unix and windows paths', () => {
@@ -38,6 +46,13 @@ describe('file-system', () => {
 	it('adds dbml extension when missing', () => {
 		expect(ensureDbmlExtension('/tmp/schema')).toBe('/tmp/schema.dbml');
 		expect(ensureDbmlExtension('/tmp/schema.DBML')).toBe('/tmp/schema.DBML');
+	});
+
+	it('detects the Tauri runtime', () => {
+		expect(isTauriRuntime()).toBe(true);
+
+		tauriMocks.isTauri.mockReturnValue(false);
+		expect(isTauriRuntime()).toBe(false);
 	});
 
 	it('opens a selected dbml file', async () => {
@@ -64,6 +79,23 @@ describe('file-system', () => {
 
 		await expect(openDbmlFile()).resolves.toBeNull();
 		expect(tauriMocks.readTextFile).not.toHaveBeenCalled();
+	});
+
+	it('throws before opening a native dialog outside Tauri', async () => {
+		tauriMocks.isTauri.mockReturnValue(false);
+
+		await expect(openDbmlFile()).rejects.toThrow('Tauri環境ではないため');
+		expect(tauriMocks.open).not.toHaveBeenCalled();
+	});
+
+	it('reads a dbml file selected by the browser file picker', async () => {
+		const file = new File(['Table users {}'], 'schema.dbml', { type: 'text/plain' });
+
+		await expect(readBrowserDbmlFile(file)).resolves.toEqual({
+			content: 'Table users {}',
+			path: null,
+			fileName: 'schema.dbml'
+		});
 	});
 
 	it('writes dbml content to an existing file path', async () => {

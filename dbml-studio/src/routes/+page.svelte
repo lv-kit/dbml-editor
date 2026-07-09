@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import {
+		ArrowLeft,
 		Download,
 		FilePlus2,
 		FolderOpen,
@@ -18,8 +19,13 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { validateDbml } from '$lib/dbml-validator';
-	import { openDbmlFile, saveDbmlFile, saveDbmlFileAs } from '$lib/file-system';
-	import { handlePseudoButtonKeydown, handlePseudoButtonKeyup } from '$lib/keyboard';
+	import {
+		isTauriRuntime,
+		openDbmlFile,
+		readBrowserDbmlFile,
+		saveDbmlFile,
+		saveDbmlFileAs
+	} from '$lib/file-system';
 
 	const INITIAL_DBML = `// 新しいDBMLスキーマを作成してください
 
@@ -38,6 +44,7 @@ Table users {
 	let isBusy = $state(false);
 	let errorMessage = $state<string | null>(null);
 	let isDark = $state(false);
+	let fileInput: HTMLInputElement | null = $state(null);
 
 	let isEdited = $derived(content !== savedContent);
 	let validation = $derived(validateDbml(content));
@@ -67,17 +74,42 @@ Table users {
 		errorMessage = null;
 	}
 
+	function goHome() {
+		hasStarted = false;
+		errorMessage = null;
+	}
+
 	async function openFile() {
+		if (!isTauriRuntime()) {
+			fileInput?.click();
+			return;
+		}
+
 		await runFileAction(async () => {
 			const document = await openDbmlFile();
 			if (!document) return;
 
-			content = document.content;
-			savedContent = document.content;
-			currentPath = document.path;
-			currentFileName = document.fileName;
-			hasStarted = true;
+			loadDocument(document);
 		}, 'ファイルを開けませんでした');
+	}
+
+	async function handleBrowserFileSelect(event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+		input.value = '';
+		if (!file) return;
+
+		await runFileAction(async () => {
+			loadDocument(await readBrowserDbmlFile(file));
+		}, 'ファイルを開けませんでした');
+	}
+
+	function loadDocument(document: { content: string; path: string | null; fileName: string }) {
+		content = document.content;
+		savedContent = document.content;
+		currentPath = document.path;
+		currentFileName = document.fileName;
+		hasStarted = true;
 	}
 
 	async function saveFile() {
@@ -123,10 +155,18 @@ Table users {
 
 {#if !hasStarted}
 	<main class="flex h-screen flex-col bg-background text-foreground">
+		<input
+			bind:this={fileInput}
+			type="file"
+			accept=".dbml,text/plain"
+			class="sr-only"
+			tabindex="-1"
+			onchange={handleBrowserFileSelect}
+		/>
+
 		<header class="flex items-center justify-between border-b border-border bg-card px-5 py-3">
 			<div>
 				<h1 class="text-lg font-semibold">DBML Studio</h1>
-				<p class="text-sm text-muted-foreground">ローカルDBMLファイルを編集</p>
 			</div>
 			<Button variant="outline" size="icon" onclick={toggleDarkMode} aria-label="ダークモード切替">
 				{#if isDark}
@@ -138,51 +178,83 @@ Table users {
 		</header>
 
 		<section class="flex flex-1 items-center justify-center p-6">
-			<div class="grid w-full max-w-2xl gap-4 sm:grid-cols-2">
-				<div
-					role="button"
-					tabindex="0"
-					onclick={startNew}
-					onkeydown={(e) => handlePseudoButtonKeydown(e, startNew)}
-					onkeyup={(e) => handlePseudoButtonKeyup(e, startNew)}
-					class="cursor-pointer rounded-lg text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-				>
-					<Card class="h-full transition hover:border-primary hover:shadow-md">
-						<CardContent class="flex h-44 flex-col justify-center p-6">
-							<FilePlus2 class="mb-5 size-8 text-sky-600 dark:text-sky-400" />
-							<span class="mb-2 text-lg font-semibold">新規作成</span>
-							<span class="text-sm text-muted-foreground">
-								テンプレートからDBMLファイルを作成
-							</span>
-						</CardContent>
-					</Card>
-				</div>
+			<div class="flex w-full max-w-2xl flex-col gap-4">
+				{#if errorMessage}
+					<Alert variant="destructive" class="border-destructive/50 bg-background text-foreground">
+						<AlertDescription class="flex items-center justify-between gap-4">
+							<span>{errorMessage}</span>
+							<button
+								type="button"
+								onclick={() => (errorMessage = null)}
+								class="rounded p-1 text-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+								aria-label="エラーを閉じる"
+							>
+								<X class="size-4" />
+							</button>
+						</AlertDescription>
+					</Alert>
+				{/if}
 
-				<div
-					role="button"
-					tabindex="0"
-					onclick={openFile}
-					onkeydown={(e) => handlePseudoButtonKeydown(e, openFile)}
-					onkeyup={(e) => handlePseudoButtonKeyup(e, openFile)}
-					class="cursor-pointer rounded-lg text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-				>
-					<Card class="h-full transition hover:border-primary hover:shadow-md">
-						<CardContent class="flex h-44 flex-col justify-center p-6">
-							<FolderOpen class="mb-5 size-8 text-emerald-600 dark:text-emerald-400" />
-							<span class="mb-2 text-lg font-semibold">ファイルを開く</span>
-							<span class="text-sm text-muted-foreground">
-								既存の.dbmlファイルを読み込んで編集
-							</span>
-						</CardContent>
-					</Card>
+				<div class="grid gap-4 sm:grid-cols-2">
+					<button
+						type="button"
+						onclick={startNew}
+						disabled={isBusy}
+						class="cursor-pointer rounded-lg text-left disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+					>
+						<Card class="h-full transition hover:border-primary hover:shadow-md">
+							<CardContent class="flex h-44 flex-col justify-center p-6">
+								<FilePlus2 class="mb-5 size-8 text-sky-600 dark:text-sky-400" />
+								<span class="mb-2 text-lg font-semibold">新規作成</span>
+								<span class="text-sm text-muted-foreground">
+									テンプレートからDBMLファイルを作成
+								</span>
+							</CardContent>
+						</Card>
+					</button>
+
+					<button
+						type="button"
+						onclick={openFile}
+						disabled={isBusy}
+						class="cursor-pointer rounded-lg text-left disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+					>
+						<Card class="h-full transition hover:border-primary hover:shadow-md">
+							<CardContent class="flex h-44 flex-col justify-center p-6">
+								<FolderOpen class="mb-5 size-8 text-emerald-600 dark:text-emerald-400" />
+								<span class="mb-2 text-lg font-semibold">ファイルを開く</span>
+								<span class="text-sm text-muted-foreground">
+									既存の.dbmlファイルを読み込んで編集
+								</span>
+							</CardContent>
+						</Card>
+					</button>
 				</div>
 			</div>
 		</section>
 	</main>
 {:else}
 	<main class="flex h-screen flex-col bg-background text-foreground">
+		<input
+			bind:this={fileInput}
+			type="file"
+			accept=".dbml,text/plain"
+			class="sr-only"
+			tabindex="-1"
+			onchange={handleBrowserFileSelect}
+		/>
+
 		<header class="flex min-h-12 flex-wrap items-center justify-between gap-2 border-b border-border bg-card px-4 py-2">
 			<div class="flex min-w-0 items-center gap-3">
+				<Button
+					class="shrink-0"
+					variant="ghost"
+					size="icon"
+					onclick={goHome}
+					aria-label="開始画面に戻る"
+				>
+					<ArrowLeft />
+				</Button>
 				<span class="truncate text-sm font-medium">{currentFileName}</span>
 				{#if isEdited}
 					<Badge
