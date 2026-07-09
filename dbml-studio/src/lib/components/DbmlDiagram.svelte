@@ -37,26 +37,26 @@
 
 	// Colors that change based on dark mode
 	let colors = $derived({
-		canvasBg: darkMode ? '#0f172a' : 'white',
-		tableBg: darkMode ? '#1e293b' : 'white',
-		tableBorder: darkMode ? '#475569' : '#e2e8f0',
+		canvasBg: darkMode ? '#111827' : 'white',
+		tableBg: darkMode ? '#1f2937' : 'white',
+		tableBorder: darkMode ? '#4b5563' : '#e2e8f0',
 		tableShadow: darkMode ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.08)',
-		refLine: darkMode ? '#64748b' : '#94a3b8',
-		rowSeparator: darkMode ? '#334155' : '#f1f5f9',
-		fieldName: darkMode ? '#cbd5e1' : '#475569',
-		pkFieldName: darkMode ? '#e2e8f0' : '#334155',
-		fieldType: darkMode ? '#64748b' : '#94a3b8',
+		refLine: darkMode ? '#9ca3af' : '#94a3b8',
+		rowSeparator: darkMode ? '#374151' : '#f1f5f9',
+		fieldName: darkMode ? '#e5e7eb' : '#475569',
+		pkFieldName: darkMode ? '#f9fafb' : '#334155',
+		fieldType: darkMode ? '#d1d5db' : '#64748b',
 		pkColor: '#f59e0b',
-		dot: darkMode ? '#64748b' : '#cbd5e1',
-		dotStroke: darkMode ? '#1e293b' : 'white',
+		dot: darkMode ? '#9ca3af' : '#cbd5e1',
+		dotStroke: darkMode ? '#1f2937' : 'white',
 		noteDot: '#fbbf24',
-		noteBg: darkMode ? '#1c1406' : '#fef9c3',
-		noteBorder: darkMode ? '#ca8a04' : '#fbbf24',
-		noteAccent: darkMode ? '#ca8a04' : '#fbbf24',
+		noteBg: darkMode ? '#2f2305' : '#fef9c3',
+		noteBorder: darkMode ? '#facc15' : '#fbbf24',
+		noteAccent: darkMode ? '#facc15' : '#fbbf24',
 		noteShadow: darkMode ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.06)',
 		noteLabel: darkMode ? '#fde68a' : '#b45309',
 		noteText: darkMode ? '#fef3c7' : '#78350f',
-		emptyText: darkMode ? '#475569' : '#9ca3af'
+		emptyText: darkMode ? '#d1d5db' : '#6b7280'
 	});
 
 	// Custom table positions (overrides grid layout when dragged)
@@ -674,7 +674,7 @@
 	{#if parsed.error && parsed.tables.length > 0}
 		<div
 			data-testid="diagram-parse-warning"
-			class="absolute top-3 right-3 z-10 max-w-72 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 shadow-sm dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-300"
+			class="absolute top-3 right-3 z-10 max-w-72 rounded-md border border-amber-600/40 bg-amber-100 px-3 py-2 text-xs text-amber-950 shadow-sm dark:border-amber-300/50 dark:bg-amber-300/15 dark:text-amber-100"
 		>
 			<div class="font-semibold">Parse error</div>
 			<div class="mt-1 line-clamp-3">{parsed.error}</div>

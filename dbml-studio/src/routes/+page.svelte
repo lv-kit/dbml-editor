@@ -122,11 +122,11 @@ Table users {
 </script>
 
 {#if !hasStarted}
-	<main class="flex h-screen flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-		<header class="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-3 dark:border-slate-800 dark:bg-slate-900">
+	<main class="flex h-screen flex-col bg-background text-foreground">
+		<header class="flex items-center justify-between border-b border-border bg-card px-5 py-3">
 			<div>
 				<h1 class="text-lg font-semibold">DBML Studio</h1>
-				<p class="text-sm text-slate-500 dark:text-slate-400">ローカルDBMLファイルを編集</p>
+				<p class="text-sm text-muted-foreground">ローカルDBMLファイルを編集</p>
 			</div>
 			<Button variant="outline" size="icon" onclick={toggleDarkMode} aria-label="ダークモード切替">
 				{#if isDark}
@@ -145,13 +145,13 @@ Table users {
 					onclick={startNew}
 					onkeydown={(e) => handlePseudoButtonKeydown(e, startNew)}
 					onkeyup={(e) => handlePseudoButtonKeyup(e, startNew)}
-					class="cursor-pointer text-left focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+					class="cursor-pointer rounded-lg text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
 				>
-					<Card class="h-full border-slate-200 bg-white transition hover:border-sky-400 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+					<Card class="h-full transition hover:border-primary hover:shadow-md">
 						<CardContent class="flex h-44 flex-col justify-center p-6">
 							<FilePlus2 class="mb-5 size-8 text-sky-600 dark:text-sky-400" />
 							<span class="mb-2 text-lg font-semibold">新規作成</span>
-							<span class="text-sm text-slate-500 dark:text-slate-400">
+							<span class="text-sm text-muted-foreground">
 								テンプレートからDBMLファイルを作成
 							</span>
 						</CardContent>
@@ -164,13 +164,13 @@ Table users {
 					onclick={openFile}
 					onkeydown={(e) => handlePseudoButtonKeydown(e, openFile)}
 					onkeyup={(e) => handlePseudoButtonKeyup(e, openFile)}
-					class="cursor-pointer text-left focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+					class="cursor-pointer rounded-lg text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
 				>
-					<Card class="h-full border-slate-200 bg-white transition hover:border-sky-400 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+					<Card class="h-full transition hover:border-primary hover:shadow-md">
 						<CardContent class="flex h-44 flex-col justify-center p-6">
 							<FolderOpen class="mb-5 size-8 text-emerald-600 dark:text-emerald-400" />
 							<span class="mb-2 text-lg font-semibold">ファイルを開く</span>
-							<span class="text-sm text-slate-500 dark:text-slate-400">
+							<span class="text-sm text-muted-foreground">
 								既存の.dbmlファイルを読み込んで編集
 							</span>
 						</CardContent>
@@ -180,43 +180,62 @@ Table users {
 		</section>
 	</main>
 {:else}
-	<main class="flex h-screen flex-col bg-slate-950 text-slate-100">
-		<header class="flex min-h-12 items-center justify-between border-b border-slate-800 bg-slate-900 px-4 py-2">
+	<main class="flex h-screen flex-col bg-background text-foreground">
+		<header class="flex min-h-12 flex-wrap items-center justify-between gap-2 border-b border-border bg-card px-4 py-2">
 			<div class="flex min-w-0 items-center gap-3">
-				<span class="truncate text-sm font-medium text-slate-100">{currentFileName}</span>
+				<span class="truncate text-sm font-medium">{currentFileName}</span>
 				{#if isEdited}
-					<Badge variant="outline" class="border-amber-400/40 bg-amber-400/10 text-amber-200">
+					<Badge
+						variant="outline"
+						class="border-amber-600/40 bg-amber-100 text-amber-900 dark:border-amber-300/40 dark:bg-amber-300/15 dark:text-amber-100"
+					>
 						未保存
 					</Badge>
 				{/if}
 				{#if !validation.valid}
-					<Badge variant="outline" class="border-red-400/40 bg-red-400/10 text-red-200">
+					<Badge
+						variant="outline"
+						class="border-red-600/40 bg-red-100 text-red-900 dark:border-red-300/40 dark:bg-red-300/15 dark:text-red-100"
+					>
 						DBMLエラー
 					</Badge>
 				{/if}
 			</div>
 
-			<div class="flex items-center gap-2">
-				<Button variant="outline" size="sm" onclick={startNew} disabled={isBusy}>
+			<div class="flex max-w-full items-center gap-2 overflow-x-auto pb-0.5">
+				<Button class="shrink-0" variant="outline" size="sm" onclick={startNew} disabled={isBusy}>
 					<FilePlus2 />
 					新規
 				</Button>
-				<Button variant="outline" size="sm" onclick={openFile} disabled={isBusy}>
+				<Button class="shrink-0" variant="outline" size="sm" onclick={openFile} disabled={isBusy}>
 					<FolderOpen />
 					開く
 				</Button>
-				<Button size="sm" onclick={saveFile} disabled={!isEdited || isBusy}>
+				<Button class="shrink-0" size="sm" onclick={saveFile} disabled={!isEdited || isBusy}>
 					<Save />
 					{isBusy ? '保存中' : '保存'}
 				</Button>
-				<Button variant="outline" size="sm" onclick={saveFileAs} disabled={isBusy}>
+				<Button class="shrink-0" variant="outline" size="sm" onclick={saveFileAs} disabled={isBusy}>
 					<SaveAll />
 					名前を付けて保存
 				</Button>
-				<Button variant="outline" size="icon" onclick={exportFile} disabled={isBusy} aria-label="エクスポート">
+				<Button
+					class="shrink-0"
+					variant="outline"
+					size="icon"
+					onclick={exportFile}
+					disabled={isBusy}
+					aria-label="エクスポート"
+				>
 					<Download />
 				</Button>
-				<Button variant="outline" size="icon" onclick={toggleDarkMode} aria-label="ダークモード切替">
+				<Button
+					class="shrink-0"
+					variant="outline"
+					size="icon"
+					onclick={toggleDarkMode}
+					aria-label="ダークモード切替"
+				>
 					{#if isDark}
 						<Sun />
 					{:else}
@@ -228,14 +247,17 @@ Table users {
 		</header>
 
 		{#if errorMessage}
-			<div class="border-b border-red-500/30 bg-red-950 px-4 py-2">
-				<Alert variant="destructive" class="border-red-500/50 bg-red-950 text-red-100">
+			<div class="border-b border-destructive/40 bg-destructive/10 px-4 py-2">
+				<Alert
+					variant="destructive"
+					class="border-destructive/50 bg-background text-foreground"
+				>
 					<AlertDescription class="flex items-center justify-between gap-4">
 						<span>{errorMessage}</span>
 						<button
 							type="button"
 							onclick={() => (errorMessage = null)}
-							class="rounded p-1 text-red-100 hover:bg-red-900"
+							class="rounded p-1 text-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
 							aria-label="エラーを閉じる"
 						>
 							<X class="size-4" />
@@ -246,13 +268,15 @@ Table users {
 		{/if}
 
 		{#if !validation.valid}
-			<div class="border-b border-amber-500/30 bg-amber-950 px-4 py-2 text-sm text-amber-100">
+			<div
+				class="border-b border-amber-600/40 bg-amber-100 px-4 py-2 text-sm text-amber-950 dark:border-amber-300/40 dark:bg-amber-300/15 dark:text-amber-100"
+			>
 				{validation.error}
 			</div>
 		{/if}
 
 		<div class="flex flex-1 overflow-hidden">
-			<section class="h-full w-1/2 border-r border-slate-800">
+			<section class="h-full w-1/2 border-r border-border">
 				<DbmlCodeEditor value={content} onchange={(value) => (content = value)} />
 			</section>
 			<section class="h-full w-1/2">
