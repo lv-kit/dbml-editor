@@ -19,6 +19,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { validateDbml } from '$lib/dbml-validator';
+	import { applyDarkMode, resolveDarkMode, THEME_STORAGE_KEY } from '$lib/theme';
 	import {
 		isTauriRuntime,
 		openDbmlFile,
@@ -43,26 +44,26 @@ Table users {
 	let hasStarted = $state(false);
 	let isBusy = $state(false);
 	let errorMessage = $state<string | null>(null);
-	let isDark = $state(false);
+	let isDark = $state(typeof document !== 'undefined' && document.documentElement.classList.contains('dark'));
 	let fileInput: HTMLInputElement | null = $state(null);
 
 	let isEdited = $derived(content !== savedContent);
 	let validation = $derived(validateDbml(content));
 
 	onMount(() => {
-		const stored = localStorage.getItem('darkMode');
-		isDark = stored !== null ? stored === 'true' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+		const stored = localStorage.getItem(THEME_STORAGE_KEY);
+		isDark = resolveDarkMode(stored, window.matchMedia('(prefers-color-scheme: dark)').matches);
 		applyDarkClass(isDark);
 	});
 
 	function applyDarkClass(dark: boolean) {
-		document.documentElement.classList.toggle('dark', dark);
+		applyDarkMode(document.documentElement, dark);
 	}
 
 	function toggleDarkMode() {
 		isDark = !isDark;
 		applyDarkClass(isDark);
-		localStorage.setItem('darkMode', String(isDark));
+		localStorage.setItem(THEME_STORAGE_KEY, String(isDark));
 	}
 
 	function startNew() {
@@ -349,7 +350,7 @@ Table users {
 
 		<div class="flex flex-1 overflow-hidden">
 			<section class="h-full w-1/2 border-r border-border">
-				<DbmlCodeEditor value={content} onchange={(value) => (content = value)} />
+				<DbmlCodeEditor value={content} onchange={(value) => (content = value)} darkMode={isDark} />
 			</section>
 			<section class="h-full w-1/2">
 				<DbmlDiagram dbml={content} onchange={(value) => (content = value)} darkMode={isDark} />

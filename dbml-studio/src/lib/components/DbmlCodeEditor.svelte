@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightActiveLine, drawSelection, rectangularSelection } from '@codemirror/view';
-	import { EditorState } from '@codemirror/state';
+	import { Compartment, EditorState } from '@codemirror/state';
 	import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 	import { oneDark } from '@codemirror/theme-one-dark';
 	import { sql } from '@codemirror/lang-sql';
@@ -12,13 +12,15 @@
 	interface Props {
 		value: string;
 		onchange?: (value: string) => void;
+		darkMode?: boolean;
 	}
 
-	let { value, onchange }: Props = $props();
+	let { value, onchange, darkMode = false }: Props = $props();
 
 	let editorContainer: HTMLDivElement | undefined = $state();
 	let view: EditorView | undefined = $state();
 	let isInternalUpdate = false;
+	const theme = new Compartment();
 
 	onMount(() => {
 		if (!editorContainer) return;
@@ -48,7 +50,7 @@
 				autocompletion(),
 				sql(),
 				syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-				oneDark,
+				theme.of(darkMode ? oneDark : []),
 				keymap.of([
 					...defaultKeymap,
 					...historyKeymap,
@@ -86,6 +88,12 @@
 					}
 				});
 			}
+		}
+	});
+
+	$effect(() => {
+		if (view) {
+			view.dispatch({ effects: theme.reconfigure(darkMode ? oneDark : []) });
 		}
 	});
 </script>
