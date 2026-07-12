@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { messages, type Locale } from '$lib/i18n';
 	import { HEADER_HEIGHT, ROW_HEIGHT } from './dbml-diagram-layout';
 	import {
 		keepLastValidDiagram,
@@ -12,9 +13,11 @@
 		dbml: string;
 		onchange?: (dbml: string) => void;
 		darkMode?: boolean;
+		locale: Locale;
 	}
 
-	let { dbml, onchange, darkMode = false }: Props = $props();
+	let { dbml, onchange, darkMode = false, locale }: Props = $props();
+	let text = $derived(messages[locale]);
 
 	interface NoteTooltip {
 		table: string;
@@ -676,20 +679,20 @@
 			data-testid="diagram-parse-warning"
 			class="absolute top-3 right-3 z-10 max-w-72 rounded-md border border-amber-600/40 bg-amber-100 px-3 py-2 text-xs text-amber-950 shadow-sm dark:border-amber-300/50 dark:bg-amber-300/15 dark:text-amber-100"
 		>
-			<div class="font-semibold">Parse error</div>
+			<div class="font-semibold">{text.parseError}</div>
 			<div class="mt-1 line-clamp-3">{parsed.error}</div>
 		</div>
 	{/if}
 	{#if parsed.error && parsed.tables.length === 0}
 		<div class="flex h-full items-center justify-center" style="color: {colors.emptyText}">
 			<div class="text-center">
-				<p class="mb-2 text-lg">Diagram</p>
+				<p class="mb-2 text-lg">{text.diagram}</p>
 				<p class="text-sm">{parsed.error}</p>
 			</div>
 		</div>
 	{:else if parsed.tables.length === 0}
 		<div class="flex h-full items-center justify-center" style="color: {colors.emptyText}">
-			<p>DBMLを入力するとダイアグラムが表示されます</p>
+			<p>{text.emptyDiagram}</p>
 		</div>
 	{:else}
 		<svg
