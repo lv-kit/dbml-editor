@@ -1,16 +1,31 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { applyDarkMode, resolveDarkMode } from './theme';
+import { applyDarkMode, resolveDarkMode, resolveThemePreference } from './theme';
 
-describe('resolveDarkMode', () => {
+describe('resolveThemePreference', () => {
 	it('uses the saved setting when one exists', () => {
-		expect(resolveDarkMode('true', false)).toBe(true);
-		expect(resolveDarkMode('false', true)).toBe(false);
+		expect(resolveThemePreference('dark', null)).toBe('dark');
 	});
 
-	it('uses the system preference when no setting is saved', () => {
-		expect(resolveDarkMode(null, true)).toBe(true);
-		expect(resolveDarkMode(null, false)).toBe(false);
+	it('migrates the legacy boolean setting', () => {
+		expect(resolveThemePreference(null, 'true')).toBe('dark');
+		expect(resolveThemePreference(null, 'false')).toBe('light');
+	});
+
+	it('uses the system theme when no setting is saved', () => {
+		expect(resolveThemePreference(null, null)).toBe('system');
+	});
+});
+
+describe('resolveDarkMode', () => {
+	it('uses the selected theme', () => {
+		expect(resolveDarkMode('light', true)).toBe(false);
+		expect(resolveDarkMode('dark', false)).toBe(true);
+	});
+
+	it('uses the system preference for the system theme', () => {
+		expect(resolveDarkMode('system', true)).toBe(true);
+		expect(resolveDarkMode('system', false)).toBe(false);
 	});
 });
 

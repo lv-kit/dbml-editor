@@ -5,9 +5,9 @@ export interface ValidationResult {
 	error: string | null;
 }
 
-export function validateDbml(content: string): ValidationResult {
+export function validateDbml(content: string, emptyContentError = 'DBMLの内容が空です'): ValidationResult {
 	if (!content.trim()) {
-		return { valid: false, error: 'DBMLの内容が空です' };
+		return { valid: false, error: emptyContentError };
 	}
 
 	try {
