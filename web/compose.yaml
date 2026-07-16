@@ -3,20 +3,20 @@ services:
     image: postgres
     restart: always
     ports:
-      - 5432:5432
+      - '${POSTGRES_PORT:-5432}:5432'
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: mysecretpassword
       POSTGRES_DB: local
     volumes:
       - pgdata:/var/lib/postgresql
-  
+
   web:
-    container_name: "dblm-editor-web"
+    container_name: 'dblm-editor-web'
     build:
       context: .
     ports:
-      - "5173:5173"
+      - '5173:5173'
     volumes:
       - .:/app
       - /app/node_modules

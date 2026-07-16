@@ -17,13 +17,12 @@ GitHub / Google / Microsoft (Entra ID) のOAuthログインに対応していま
 
 ## 利用方法
 
-
 ```sh
 # install dependencies package
-npm install
+pnpm install
 
-npm run dev
+pnpm run dev
 
 # or start the server and open the app in a new browser tab
-npm run dev -- --open
+pnpm run dev -- --open
 ```
