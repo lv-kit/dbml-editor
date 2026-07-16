@@ -1,8 +1,4 @@
-## Project Configuration
-
-- **Language**: TypeScript
-- **Package Manager**: bun
-- **Add-ons**: prettier, eslint, vitest, playwright, tailwindcss, sveltekit-adapter, devtools-json, drizzle, paraglide, storybook, mcp
+`AGENTS.md` を本プロジェクトの実装ルールとして読み、すべて遵守する。
 
 ---
 

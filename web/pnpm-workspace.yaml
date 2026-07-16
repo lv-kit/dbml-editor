@@ -1,0 +1,11 @@
+allowBuilds:
+  '@firebase/util': true
+  esbuild: true
+  protobufjs: true
+  sharp: true
+  workerd: true
+minimumReleaseAgeExclude:
+  - miniflare@4.20260710.0
+  - prettier-plugin-tailwindcss@0.8.1
+  - svelte-check@4.7.3
+  - wrangler@4.111.0
