@@ -1,0 +1,41 @@
+# dbml-editor — Cursor 入口（コミット規約の正本）
+
+> このファイルはコミット規約の**正本**である。他ファイルはここを参照するだけで再掲しない。
+> 実装規約の正本は `AGENTS.md`、詳細規約は `.claude/rules/**`。矛盾したら正本を優先する。
+
+## 参照順（トークン節約）
+
+1. まず `AGENTS.md`（実装ルールの正本）を読む
+2. 変更対象に応じて `.claude/rules/**` の該当ファイルだけを読む
+3. コミット時のみ本ファイル（コミット規約）を確認する
+
+## コミット規約（正本）
+
+- 形式: `type: 要約`（Conventional Commits 準拠）
+  - `type` は `feat` / `fix` / `docs` / `style` / `refactor` / `test` / `chore` / `perf` / `ci` のいずれか
+  - 件名は **50 文字以内・句点なし・命令形**
+  - 本文を必須とし、**「なぜ」変更したか**を記す。パス単位の箇条書きで「何を」変えたかを併記する
+- 言語: **日本語**（コミットメッセージ・コードコメント）
+- 1 コミット = 1 論理的変更。要件に無関係な整形・依存更新を混ぜない
+- `--no-verify` は禁止（hook でブロックされる）
+
+### 例
+
+```
+feat: 組織メンバー招待フローを追加
+
+- web/src/lib/members.ts: 招待トークン生成と検証を実装
+- web/src/routes/organizations/[id]/members: 招待UIを追加
+- 既存メンバーと重複する招待は拒否する（データ整合性のため）
+```
+
+## ブランチ・PR 規約
+
+- ブランチ戦略・PR 手順はここに書かない。正本は `.claude/rules/common/git-workflow.md`
+- ブランチ命名: `<tool>/<topic>`（例: `cursor/add-export`, `claude/agent-harness`）
+
+## 変更後検証（ローカル CI 相当・必須）
+
+- `web/` 変更時: `pnpm run check` → `pnpm run lint` → `pnpm run test:unit --run`
+- `dbml-studio/` 変更時: `pnpm run check` → `pnpm run test`
+- 詳細は `.claude/rules/common/testing.md`

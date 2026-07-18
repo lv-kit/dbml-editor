@@ -1,1 +1,7 @@
 .DS_Store
+
+# エージェントハーネスのローカル生成物
+.claude/settings.local.json
+.claude/worktrees/
+.claude/state/
+last-session-changes.md
