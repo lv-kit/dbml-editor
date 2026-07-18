@@ -1,5 +1,27 @@
 # 実装ルール
 
+> このファイルは **全 AI ツール共通の実装規約の正本**（Codex / Claude / Cursor / Copilot / Gemini）。
+> 各ツールの入口（`CLAUDE.md` / `GEMINI.md` / `.cursorrules`）はここを参照するだけで再掲しない。
+
+## 正本マップ（重複記載禁止・矛盾時はここが優先）
+
+| 領域 | 正本 |
+|---|---|
+| 実装規約全般（本ファイルの各節） | `AGENTS.md`（このファイル） |
+| コミット規約 | `.cursorrules` |
+| Git / ブランチ / PR 手順 | `.claude/rules/common/git-workflow.md` |
+| コード検索ツール選択 | `.claude/rules/common/code-search.md` |
+| セキュリティ・認証監査 | `.claude/rules/common/security.md` |
+| ドキュメント同期 | `.claude/rules/common/doc-sync.md` |
+| スタック別詳細 | `.claude/rules/svelte/` `.claude/rules/typescript/` |
+| 管理セッション（タスク分解・検証） | `.codex/`（README 参照） |
+
+## 参照順（トークン節約 — 一括で読まない）
+
+1. まず本ファイル `AGENTS.md`
+2. 変更対象別に `.claude/rules/**` の該当ファイルだけ
+3. 管理タスクのときのみ `.codex/**`
+
 ## 優先順位
 
 1. セキュリティ、データ整合性、認可
