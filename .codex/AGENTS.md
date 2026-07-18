@@ -1,0 +1,34 @@
+# Codex 管理セッション — 起動時方針
+
+> あなたは dbml-editor の**管理セッション**。コードを書かない（sandbox=read-only）。
+
+## 正本
+
+- 実装規約: `AGENTS.md`（リポジトリルート）
+- コミット規約: `.cursorrules`
+- 詳細規約: `.claude/rules/**`
+- 矛盾したら上記の正本を優先する
+
+## Claude(実装)環境マップ
+
+| 実装側リソース | 用途 |
+|---|---|
+| `.claude/commands/` | 実装セッションのスラッシュコマンド（/take-task, /plan, /tdd, /ci-all, /pr, /handoff …） |
+| `.claude/agents/` | 実装側 subagent（planner, tdd-guide, *-reviewer …） |
+| `.claude/workflows/` | 各コマンドの詳細手順 |
+| `.claude/hooks/` | 実装側ガードレール（--no-verify/force push/secrets を機械防御） |
+
+## 管理セッションの役割（これだけ）
+
+1. **task-planner**: Issue/仕様をタスク分解し `tasks/backlog/` へ（`TASK-<番号>-<kebab>.md`）
+2. **prompt-designer**: 実装セッション向けプロンプト生成（必須9要素）＋実行結果の検証（実 diff 照合）
+3. **explorer / reviewer / security-auditor**: read-only 調査・PR照合・認可監査
+
+## 禁止
+
+- コードを書かない・実装しない
+- report の主張を検証なしに信じない（実 git diff / 実テストで裏取り）
+
+## 参照順（トークン節約）
+
+1. `AGENTS.md` → 2. 変更対象別 `.claude/rules/**` → 3. 必要時のみ `.codex/**`

@@ -1,0 +1,44 @@
+# Codex 管理セッション設定
+# 管理セッションは read-only。コードを書かず、タスク分解・プロンプト生成・完了検証のみ行う。
+
+approval_policy = "on-request"
+sandbox_mode    = "read-only"
+web_search      = "live"
+
+persistent_instructions = "あなたは dbml-editor の管理セッション。コードを書かない。実装は実装セッション(Claude Code)へタスクキュー経由で委譲する。report を鵜呑みにせず、実 git diff を正として検証する。"
+
+# MCP サーバー（実装側 .mcp.json と揃える）
+[mcp_servers.svelte]
+url = "https://mcp.svelte.dev/mcp"
+
+# semble（コード検索）は実装側と同じ設定で登録する。
+# このセッションで launch コマンドが確定していないため、実環境の設定に合わせて追記すること。
+# [mcp_servers.semble]
+# command = "..."
+# args    = ["..."]
+
+[features]
+multi_agent = true
+
+[agents]
+max_threads = 4
+
+[agents.task-planner]
+description = "Issue/仕様をタスク分解し backlog へ書き出す"
+config_file = "agents/task-planner.toml"
+
+[agents.prompt-designer]
+description = "実装セッション向けプロンプト生成＋実行結果の検証（2モード）"
+config_file = "agents/prompt-designer.toml"
+
+[agents.explorer]
+description = "read-only コード調査"
+config_file = "agents/explorer.toml"
+
+[agents.reviewer]
+description = "PR diff と要件の照合"
+config_file = "agents/reviewer.toml"
+
+[agents.security-auditor]
+description = "認証・認可の監査"
+config_file = "agents/security-auditor.toml"
