@@ -22,5 +22,5 @@
 
 - 検索は semble 第一選択（`.claude/rules/common/code-search.md`）。同じ内容を再検索しない
 - 一度読んだファイルを検証目的で読み直さない
-- context 残量が逼迫したら、圧縮前に状態を退避（`pre-compact-save` hook が変更ファイル一覧を `last-session-changes.md` へ保存）
+- 関連のないタスクは `/clear` で分ける。圧縮時は変更ファイルと検証コマンドを要約に残す
 - 長い調査結果は貼り戻さず、要点だけを残す
