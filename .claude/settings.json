@@ -28,15 +28,6 @@
           { "type": "command", "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/post-edit-file-size.sh" }
         ]
       }
-    ],
-    "SessionStart": [
-      { "hooks": [ { "type": "command", "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/session-start-context.sh" } ] }
-    ],
-    "PreCompact": [
-      { "hooks": [ { "type": "command", "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/pre-compact-save.sh" } ] }
-    ],
-    "Stop": [
-      { "hooks": [ { "type": "command", "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/post-stop-summary.sh" } ] }
     ]
   },
   "permissions": {
