@@ -1,7 +1,8 @@
 ---
 name: security-reviewer
 description: セキュリティ・認証・認可の監査。SQLインジェクション/XSS、秘密情報の露出、クライアントからのサーバ資源直アクセス、ロール別認可の網羅を確認する。認証・認可を触る PR で必須。
-model: sonnet
+model: claude-opus-4-8
+effort: high
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -30,3 +31,7 @@ tools: Read, Grep, Glob, Bash
 
 ## 禁止事項
 - コードを書かない
+
+## 完了ゲート
+- 検出が1件でもあれば PASS にしない。修正後、影響する検査を再実行し、同じ観点で再レビューする
+- 指摘ゼロになるまで監査完了と報告しない

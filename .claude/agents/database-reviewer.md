@@ -1,7 +1,8 @@
 ---
 name: database-reviewer
 description: Drizzle スキーマ・マイグレーション・クエリのレビュー。schema.ts 変更、マイグレーション整合、N+1・インデックス、ドキュメント同期を確認する。DB を触る PR で使う。
-model: sonnet
+model: claude-opus-4-8
+effort: high
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -30,3 +31,7 @@ tools: Read, Grep, Glob, Bash
 ## 禁止事項
 - コードを書かない
 - 実DBへの破壊的操作（push/migrate）を指示しない
+
+## 完了ゲート
+- 指摘が1件でもあれば PASS にしない。修正後、影響する検査を再実行し、同じ観点で再レビューする
+- 指摘ゼロになるまでレビュー完了と報告しない

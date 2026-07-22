@@ -11,8 +11,8 @@ argument-hint: "[TASK-番号]"
 2. 実際の `git diff`（該当ブランチ/PR）と突き合わせる
 3. 完了条件チェックリストを1項目ずつ実 diff で確認する
 4. 判定:
-   - **PASS** → reviewer で最終レビューへ
+   - **PASS** → reviewer と変更内容に応じた専門 reviewer で最終レビューへ
    - **FAIL** → `in-progress/` へ差し戻し、不足点を明記
 
 ## 関連
-handoff → **verify-task** →（PASS）final review /（FAIL）差し戻し
+handoff → **verify-task** →（PASS）汎用+専門 final review /（FAIL）差し戻し

@@ -14,7 +14,7 @@ argument-hint: "<変更したい内容>"
 ---
 # /plan
 
-`planner` エージェントに委譲する。横断・大規模・アーキ判断が絡むなら `/plan-deep` を使う。
+`planner`（`claude-opus-4-8` / `high`）エージェントに委譲する。横断・大規模・アーキ判断が絡むなら `/plan-deep` を使う。
 
 ## 手順
 1. `planner` サブエージェントを起動し、要件「$ARGUMENTS」の実装計画を依頼する

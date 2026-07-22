@@ -1,7 +1,8 @@
 ---
 name: planner-deep
 description: 複数モジュール横断・アーキテクチャ判断・大規模リファクタの設計を行う。web/ と dbml-studio/ の共有境界、DB スキーマ変更、認証フロー変更など影響が広い計画専用。小規模は planner を使う。コードは書かない。
-model: opus
+model: claude-opus-4-8
+effort: high
 tools: Read, Grep, Glob
 ---
 

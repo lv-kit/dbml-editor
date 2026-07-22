@@ -5,7 +5,7 @@
 ```
 1. 対象: Issue #<n> — <スキーマ変更の目的>
 2. ブランチ: claude/db-<topic> → main
-3. 推奨: /take-task → /plan → /tdd → /ci-all → /db-review → /pr → /handoff
+3. 推奨: /take-task → /plan → /tdd → /ci-all → /code-review + database-reviewer → 指摘ゼロまで修正・再検査・再レビュー → /handoff → git-publisher
 4. 実施内容:
    - web/src/lib/server/db/schema.ts に <テーブル/列> を <追加/変更>
    - drizzle-kit generate でマイグレーション生成

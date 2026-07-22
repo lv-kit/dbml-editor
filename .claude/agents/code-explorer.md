@@ -1,7 +1,8 @@
 ---
 name: code-explorer
 description: 大量の tool call を伴うコード調査を main context から隔離して行う。「この機能はどこで実装されているか」「この関数の呼び出し元は」等の探索に使い、要点のダイジェストだけ返す。
-model: sonnet
+model: claude-sonnet-5
+effort: medium
 tools: Read, Grep, Glob
 ---
 

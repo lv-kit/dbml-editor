@@ -28,6 +28,7 @@ pnpm run test
 - 型/lint/テストが失敗 → `/build-fix`（`build-error-resolver`）で根本原因を修正 → 再実行
 - prettier のみ失敗 → `pnpm run format` で整形 → 再実行
 - E2E がフォント/表示で失敗 → スクリーンショットを確認し UI を修正
+- reviewer の指摘修正後 → 影響する対象領域の検査を再実行 → 同じ reviewer で再レビュー
 
 ## 完了条件
-- 対象領域すべてのコマンドが緑
+- 対象領域すべてのコマンドが緑で、汎用 reviewer と必要な専門 reviewer の指摘がゼロ

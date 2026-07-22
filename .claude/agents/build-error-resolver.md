@@ -1,7 +1,8 @@
 ---
 name: build-error-resolver
 description: 型エラー・lint エラー・ビルド失敗・テスト失敗を診断して最小修正で解消する。/ci-all が失敗したときに使う。根本原因を直し、エラーの握りつぶしをしない。
-model: sonnet
+model: claude-sonnet-5
+effort: medium
 tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 

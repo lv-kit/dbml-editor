@@ -1,7 +1,8 @@
 ---
 name: tdd-guide
 description: TDD で実装を進める。失敗するテストを先に書き、最小実装で通し、リファクタする。挙動を変える実装・バグ修正で使う。定型的で単純なテスト生成のみなら軽量運用でよい。
-model: sonnet
+model: claude-sonnet-5
+effort: medium
 tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
