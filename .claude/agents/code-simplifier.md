@@ -1,7 +1,8 @@
 ---
 name: code-simplifier
 description: 挙動を変えずにコードを簡潔化する。重複除去・過度な抽象化の解消・命名改善・デッドコード削除。バグ探索はしない（それは code-reviewer）。
-model: sonnet
+model: claude-sonnet-5
+effort: medium
 tools: Read, Grep, Glob, Edit
 ---
 

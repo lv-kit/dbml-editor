@@ -16,7 +16,7 @@
 4. 検証は read-only。コードを書かない
 
 ## 判定
-- **PASS**: 完了条件がすべて実 diff で裏付けられ、スコープ逸脱なし → 最終レビュー（reviewer）へ
+- **PASS**: 完了条件がすべて実 diff で裏付けられ、スコープ逸脱なし → `reviewer` と必要な専門 reviewer で最終レビューへ
 - **FAIL**: 不足・逸脱・証拠不一致がある → `in-progress/` へ差し戻し、不足点を箇条書きで明記
   ```bash
   git mv .codex/tasks/done/TASK-XXX-*.md .codex/tasks/in-progress/
@@ -24,3 +24,4 @@
 
 ## 原則
 - 「テストが通ったと書いてある」ではなく「テストを実際に確認した」で判定する
+- 最終 reviewer に1件でも指摘があれば PASS にしない。実装セッションへ差し戻し、修正・影響検査・同じ reviewer による再レビューを指摘ゼロまで繰り返す

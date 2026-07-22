@@ -14,7 +14,7 @@ argument-hint: "<設計したい内容>"
 ---
 # /plan-deep
 
-`planner-deep`（Opus）に委譲する。複数モジュール横断・DBスキーマ変更・認証フロー変更・大規模リファクタ専用。
+`planner-deep`（`claude-opus-4-8` / `high`）に委譲する。複数モジュール横断・DBスキーマ変更・認証フロー変更・大規模リファクタ専用。
 
 ## 手順
 1. `planner-deep` サブエージェントを起動し、「$ARGUMENTS」の設計を依頼する

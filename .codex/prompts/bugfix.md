@@ -5,7 +5,7 @@
 ```
 1. 対象: Issue #<n> — <バグの症状>
 2. ブランチ: claude/fix-<topic> → main（既存PRあれば: <head>）
-3. 推奨: /take-task → /tdd（再発テストを先に）→ /ci-all → /code-review → /pr → /handoff
+3. 推奨: /take-task → /tdd（再発テストを先に）→ /ci-all → /code-review + 必要な専門 reviewer → 指摘ゼロまで修正・再検査・再レビュー → /handoff → git-publisher
 4. 実施内容:
    - <path> の <関数> が <条件> で <誤動作>。<期待動作> に修正する
 5. 触ってよい範囲: <path(s)>

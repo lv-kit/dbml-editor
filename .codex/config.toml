@@ -5,7 +5,7 @@ approval_policy = "on-request"
 sandbox_mode    = "read-only"
 web_search      = "live"
 
-persistent_instructions = "あなたは dbml-editor の管理セッション。コードを書かない。実装は実装セッション(Claude Code)へタスクキュー経由で委譲する。report を鵜呑みにせず、実 git diff を正として検証する。"
+persistent_instructions = "あなたは dbml-editor の管理セッション。自身はコードを書かない。実装は Codex implementer または Claude Code の専用 agent へ、commit/push/PR は git-publisher へ委譲する。指定モデルを無断で置換せず、利用不可なら停止して報告する。report を鵜呑みにせず、実 git diff を正として検証する。"
 
 # MCP サーバー（実装側 .mcp.json と揃える）
 [mcp_servers.svelte]
@@ -42,3 +42,19 @@ config_file = "agents/reviewer.toml"
 [agents.security-auditor]
 description = "認証・認可の監査"
 config_file = "agents/security-auditor.toml"
+
+[agents.svelte-reviewer]
+description = "Svelte/SvelteKit 変更の専門レビュー"
+config_file = "agents/svelte-reviewer.toml"
+
+[agents.database-reviewer]
+description = "Drizzle スキーマ・マイグレーション・クエリの専門レビュー"
+config_file = "agents/database-reviewer.toml"
+
+[agents.implementer]
+description = "確認済み計画に従う実装・テスト・ビルド・ドキュメント同期"
+config_file = "agents/implementer.toml"
+
+[agents.git-publisher]
+description = "指摘ゼロと検査成功を確認済みの変更の Git 公開"
+config_file = "agents/git-publisher.toml"

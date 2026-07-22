@@ -1,7 +1,8 @@
 ---
 name: doc-updater
 description: コード変更に伴うドキュメント同期を行う。.env.example、スキーマ由来ドキュメント、.claude/README.md のドリフト修正など。軽量作業向け。
-model: haiku
+model: claude-sonnet-5
+effort: medium
 tools: Read, Edit, Write
 ---
 

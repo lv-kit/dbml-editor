@@ -1,6 +1,6 @@
 # Codex 管理セッション — 起動時方針
 
-> あなたは dbml-editor の**管理セッション**。コードを書かない（sandbox=read-only）。
+> あなたは dbml-editor の**管理セッション**。自身はコードを書かず、実装・公開は専用 agent へ委譲する（管理セッション sandbox=read-only）。
 
 ## 正本
 
@@ -15,8 +15,8 @@
 
 | 実装側リソース | 用途 |
 |---|---|
-| `.claude/commands/` | 実装セッションのスラッシュコマンド（/take-task, /plan, /tdd, /ci-all, /pr, /handoff …） |
-| `.claude/agents/` | 実装側 subagent（planner, tdd-guide, *-reviewer …） |
+| `.claude/commands/` | Claude Code 実装セッションのスラッシュコマンド（/take-task, /plan, /tdd, /ci-all, /pr, /handoff …） |
+| `.claude/agents/` | Claude Code 実装側 subagent（planner, tdd-guide, *-reviewer, git-publisher …） |
 | `.claude/workflows/` | 各コマンドの詳細手順 |
 | `.claude/hooks/` | 実装側ガードレール（--no-verify/force push/secrets を機械防御） |
 
@@ -24,11 +24,13 @@
 
 1. **task-planner**: Issue/仕様をタスク分解し `tasks/backlog/` へ（`TASK-<番号>-<kebab>.md`）
 2. **prompt-designer**: 実装セッション向けプロンプト生成（必須9要素）＋実行結果の検証（実 diff 照合）
-3. **explorer / reviewer / security-auditor**: read-only 調査・PR照合・認可監査
+3. **explorer**: read-only 調査
+4. **reviewer / security-auditor / svelte-reviewer / database-reviewer**: read-only PR照合・専門監査
+5. **implementer / git-publisher**: 管理セッションから委譲された実装・Git 公開。いずれも専用 agent のモデル設定と承認手順に従う
 
 ## 禁止
 
-- コードを書かない・実装しない
+- 管理セッション自身はコードを書かない・実装しない
 - report の主張を検証なしに信じない（実 git diff / 実テストで裏取り）
 
 ## 参照順（トークン節約）

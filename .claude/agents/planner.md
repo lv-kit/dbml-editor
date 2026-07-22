@@ -1,7 +1,8 @@
 ---
 name: planner
 description: 1〜3ファイル規模の実装計画を立てる。既存コードを調査し、変更手順・影響範囲・テスト方針を提示する。大規模・横断・アーキ判断が絡む場合は planner-deep を使う。コードは書かない。
-model: sonnet
+model: claude-opus-4-8
+effort: high
 tools: Read, Grep, Glob
 ---
 

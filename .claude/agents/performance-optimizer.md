@@ -1,7 +1,8 @@
 ---
 name: performance-optimizer
 description: パフォーマンスのボトルネックを計測ベースで特定し改善案を出す。DBクエリのN+1、不要な再レンダリング、バンドルサイズ、Workers 実行コストなど。推測で最適化しない。
-model: sonnet
+model: claude-opus-4-8
+effort: high
 tools: Read, Grep, Glob, Bash
 ---
 

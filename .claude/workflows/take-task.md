@@ -12,7 +12,7 @@
    ```bash
    git mv .codex/tasks/backlog/TASK-XXX-*.md .codex/tasks/in-progress/
    ```
-4. ブランチを作成する（`<tool>/<topic>`。既存ブランチ指定があればそれに乗る）
+4. ブランチを確認する。`main` の場合は候補名・派生元・理由を人間へ提示し、確認前に作成・切替しない。既存の適切な作業ブランチ指定があればそのまま継続する
 5. `/plan` へ進む
 
 ## 注意
