@@ -2,6 +2,10 @@ import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { organization, user } from '$lib/server/db/schema';
 import { eq, and, isNull } from 'drizzle-orm';
+import {
+	PENDING_ORGANIZATION_COOKIE_NAME,
+	verifyPendingOrganizationCookie
+} from '$lib/server/session';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
@@ -25,7 +29,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, locals }) => {
+	default: async ({ request, locals, cookies }) => {
 		const session = locals.session;
 
 		// Verify user is authenticated
@@ -54,12 +58,47 @@ export const actions: Actions = {
 		}
 
 		const orgId = organizationId ? Number(organizationId) : null;
+		if (userType !== 'personal' && userType !== 'corporate') {
+			return fail(400, {
+				name: name,
+				email: email,
+				error: '無効な利用形態です'
+			});
+		}
+		if (userType === 'personal' && orgId !== null) {
+			return fail(400, {
+				name: name,
+				email: email,
+				error: '個人利用では組織を指定できません'
+			});
+		}
+		if (userType === 'corporate' && orgId === null) {
+			return fail(400, {
+				name: name,
+				email: email,
+				error: '組織情報がありません。最初からやり直してください'
+			});
+		}
 		if (orgId !== null && (!Number.isInteger(orgId) || orgId <= 0)) {
 			return fail(400, {
 				name: name,
 				email: email,
 				error: '無効な組織IDです'
 			});
+		}
+
+		if (orgId !== null) {
+			const pendingOrganizationCookie = cookies.get(PENDING_ORGANIZATION_COOKIE_NAME);
+			const isAuthorized = pendingOrganizationCookie
+				? await verifyPendingOrganizationCookie(pendingOrganizationCookie, session.uid, orgId)
+				: false;
+			if (!isAuthorized) {
+				return fail(403, {
+					name,
+					email,
+					error: '組織登録の手続きが無効です。最初からやり直してください'
+				});
+			}
 		}
 
 		try {
@@ -98,17 +137,16 @@ export const actions: Actions = {
 			const authProvider = session.provider ?? 'unknown';
 			const authProviderId = session.uid ?? null;
 
-			await db
-				.insert(user)
-				.values({
-					name: name.trim(),
-					email: email,
-					userType: typeof userType === 'string' ? userType : 'personal',
-					role,
-					organizationId: orgId,
-					authProvider,
-					authProviderId
-				});
+			await db.insert(user).values({
+				name: name.trim(),
+				email: email,
+				userType,
+				role,
+				organizationId: orgId,
+				authProvider,
+				authProviderId
+			});
+			cookies.delete(PENDING_ORGANIZATION_COOKIE_NAME, { path: '/' });
 		} catch (error) {
 			// If it's a redirect, re-throw it
 			if (error && typeof error === 'object' && 'status' in error && error.status === 303) {

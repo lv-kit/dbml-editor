@@ -2,13 +2,20 @@ import { SignJWT, jwtVerify } from 'jose';
 import { env } from '$env/dynamic/private';
 
 const COOKIE_NAME = 'session';
+const PENDING_ORGANIZATION_COOKIE_NAME = 'pending_organization';
 const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 7; // 7 days
+const PENDING_ORGANIZATION_DURATION_SECONDS = 60 * 10;
 
 export interface SessionPayload {
 	uid: string;
 	email: string;
 	name?: string;
 	provider?: string;
+}
+
+interface PendingOrganizationPayload {
+	uid: string;
+	organizationId: number;
 }
 
 function getSecret(): Uint8Array {
@@ -40,4 +47,33 @@ export async function verifySessionCookie(cookie: string): Promise<SessionPayloa
 	}
 }
 
-export { COOKIE_NAME, SESSION_DURATION_SECONDS };
+export async function createPendingOrganizationCookie(
+	payload: PendingOrganizationPayload
+): Promise<string> {
+	const token = await new SignJWT({ ...payload })
+		.setProtectedHeader({ alg: 'HS256' })
+		.setIssuedAt()
+		.setExpirationTime(`${PENDING_ORGANIZATION_DURATION_SECONDS}s`)
+		.sign(getSecret());
+	return token;
+}
+
+export async function verifyPendingOrganizationCookie(
+	cookie: string,
+	uid: string,
+	organizationId: number
+): Promise<boolean> {
+	try {
+		const { payload } = await jwtVerify(cookie, getSecret());
+		return payload['uid'] === uid && payload['organizationId'] === organizationId;
+	} catch {
+		return false;
+	}
+}
+
+export {
+	COOKIE_NAME,
+	PENDING_ORGANIZATION_COOKIE_NAME,
+	PENDING_ORGANIZATION_DURATION_SECONDS,
+	SESSION_DURATION_SECONDS
+};
