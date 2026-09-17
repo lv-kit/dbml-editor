@@ -1,6 +1,11 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { organization } from '$lib/server/db/schema';
+import {
+	createPendingOrganizationCookie,
+	PENDING_ORGANIZATION_COOKIE_NAME,
+	PENDING_ORGANIZATION_DURATION_SECONDS
+} from '$lib/server/session';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -12,7 +17,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, locals }) => {
+	default: async ({ request, locals, cookies }) => {
 		const session = locals.session;
 		if (!session?.email) {
 			return fail(401, { name: '', slug: '', error: '認証が必要です' });
@@ -52,6 +57,17 @@ export const actions: Actions = {
 				})
 				.returning({ id: organization.id });
 			orgId = inserted.id;
+			const pendingOrganizationCookie = await createPendingOrganizationCookie({
+				uid: session.uid,
+				organizationId: orgId
+			});
+			cookies.set(PENDING_ORGANIZATION_COOKIE_NAME, pendingOrganizationCookie, {
+				path: '/',
+				httpOnly: true,
+				secure: true,
+				sameSite: 'lax',
+				maxAge: PENDING_ORGANIZATION_DURATION_SECONDS
+			});
 		} catch {
 			return fail(500, {
 				name: name,
