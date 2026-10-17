@@ -40,10 +40,15 @@ describe('canManageMembers', () => {
 });
 
 describe('canChangeRole', () => {
-	it('allows owner to change any role', () => {
+	it('allows owner to change member and admin roles', () => {
 		expect(canChangeRole('owner', 'member', 'admin')).toBe(true);
 		expect(canChangeRole('owner', 'admin', 'member')).toBe(true);
 		expect(canChangeRole('owner', 'member', 'owner')).toBe(true);
+	});
+
+	it('denies owner from changing an owner role (including self-demotion)', () => {
+		expect(canChangeRole('owner', 'owner', 'member')).toBe(false);
+		expect(canChangeRole('owner', 'owner', 'admin')).toBe(false);
 	});
 
 	it('allows admin to promote member to admin', () => {
@@ -101,10 +106,13 @@ describe('canRemoveMember', () => {
 });
 
 describe('canEditMemberRole', () => {
-	it('allows owner to edit any role', () => {
+	it('allows owner to edit member and admin roles', () => {
 		expect(canEditMemberRole('owner', 'member')).toBe(true);
 		expect(canEditMemberRole('owner', 'admin')).toBe(true);
-		expect(canEditMemberRole('owner', 'owner')).toBe(true);
+	});
+
+	it('denies owner from editing an owner role', () => {
+		expect(canEditMemberRole('owner', 'owner')).toBe(false);
 	});
 
 	it('allows admin to edit member role', () => {

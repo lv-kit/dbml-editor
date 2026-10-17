@@ -4,6 +4,7 @@ import {
 	canAddAdmin,
 	canDeleteOrganization,
 	addOrganizationAdmin,
+	createOrganization,
 	deleteOrganization
 } from './organization';
 
@@ -121,7 +122,7 @@ describe('addOrganizationAdmin', () => {
 		const repo = createMockRepo({
 			findOrganizationById: vi.fn().mockResolvedValue({ id: 1 }),
 			findUserInOrganization: vi.fn().mockResolvedValue({ id: 1, role: 'owner' }),
-			findUserByEmail: vi.fn().mockResolvedValue({ id: 2, organizationId: null })
+			findUserByEmail: vi.fn().mockResolvedValue({ id: 2, organizationId: 1, role: 'member' })
 		});
 
 		const result = await addOrganizationAdmin(repo, {
@@ -138,7 +139,7 @@ describe('addOrganizationAdmin', () => {
 		const repo = createMockRepo({
 			findOrganizationById: vi.fn().mockResolvedValue({ id: 1 }),
 			findUserInOrganization: vi.fn().mockResolvedValue({ id: 1, role: 'admin' }),
-			findUserByEmail: vi.fn().mockResolvedValue({ id: 3, organizationId: null })
+			findUserByEmail: vi.fn().mockResolvedValue({ id: 3, organizationId: 1, role: 'member' })
 		});
 
 		const result = await addOrganizationAdmin(repo, {
@@ -165,14 +166,14 @@ describe('addOrganizationAdmin', () => {
 		});
 
 		expect(result.success).toBe(false);
-		expect(result.error).toBe('このユーザーは別の組織に所属しています');
+		expect(result.error).toBe('このユーザーは組織のメンバーではありません');
 	});
 
 	it('should fail when updateUserRole returns empty (TOCTOU: user moved to another org)', async () => {
 		const repo = createMockRepo({
 			findOrganizationById: vi.fn().mockResolvedValue({ id: 1 }),
 			findUserInOrganization: vi.fn().mockResolvedValue({ id: 1, role: 'owner' }),
-			findUserByEmail: vi.fn().mockResolvedValue({ id: 2, organizationId: null }),
+			findUserByEmail: vi.fn().mockResolvedValue({ id: 2, organizationId: 1, role: 'member' }),
 			updateUserRole: vi.fn().mockResolvedValue([])
 		});
 
@@ -208,7 +209,7 @@ describe('addOrganizationAdmin', () => {
 		const repo = createMockRepo({
 			findOrganizationById: vi.fn().mockResolvedValue({ id: 1 }),
 			findUserInOrganization: vi.fn().mockResolvedValue({ id: 1, role: 'owner' }),
-			findUserByEmail: vi.fn().mockResolvedValue({ id: 2, organizationId: 1 })
+			findUserByEmail: vi.fn().mockResolvedValue({ id: 2, organizationId: 1, role: 'member' })
 		});
 
 		const result = await addOrganizationAdmin(repo, {
@@ -219,6 +220,74 @@ describe('addOrganizationAdmin', () => {
 
 		expect(result.success).toBe(true);
 		expect(repo.updateUserRole).toHaveBeenCalledWith(2, 'admin', 1);
+	});
+
+	it('should fail when target user has no organization (no consent to be moved)', async () => {
+		const repo = createMockRepo({
+			findOrganizationById: vi.fn().mockResolvedValue({ id: 1 }),
+			findUserInOrganization: vi.fn().mockResolvedValue({ id: 1, role: 'owner' }),
+			findUserByEmail: vi.fn().mockResolvedValue({ id: 2, organizationId: null, role: 'member' })
+		});
+
+		const result = await addOrganizationAdmin(repo, {
+			organizationId: 1,
+			requestingUserId: 1,
+			targetUserEmail: 'unaffiliated@example.com'
+		});
+
+		expect(result.success).toBe(false);
+		expect(repo.updateUserRole).not.toHaveBeenCalled();
+	});
+
+	it('should fail when admin targets an owner (no demotion)', async () => {
+		const repo = createMockRepo({
+			findOrganizationById: vi.fn().mockResolvedValue({ id: 1 }),
+			findUserInOrganization: vi.fn().mockResolvedValue({ id: 1, role: 'admin' }),
+			findUserByEmail: vi.fn().mockResolvedValue({ id: 2, organizationId: 1, role: 'owner' })
+		});
+
+		const result = await addOrganizationAdmin(repo, {
+			organizationId: 1,
+			requestingUserId: 1,
+			targetUserEmail: 'owner@example.com'
+		});
+
+		expect(result.success).toBe(false);
+		expect(repo.updateUserRole).not.toHaveBeenCalled();
+	});
+
+	it('should fail when admin targets another admin', async () => {
+		const repo = createMockRepo({
+			findOrganizationById: vi.fn().mockResolvedValue({ id: 1 }),
+			findUserInOrganization: vi.fn().mockResolvedValue({ id: 1, role: 'admin' }),
+			findUserByEmail: vi.fn().mockResolvedValue({ id: 2, organizationId: 1, role: 'admin' })
+		});
+
+		const result = await addOrganizationAdmin(repo, {
+			organizationId: 1,
+			requestingUserId: 1,
+			targetUserEmail: 'admin2@example.com'
+		});
+
+		expect(result.success).toBe(false);
+		expect(repo.updateUserRole).not.toHaveBeenCalled();
+	});
+
+	it('should fail when owner targets another owner', async () => {
+		const repo = createMockRepo({
+			findOrganizationById: vi.fn().mockResolvedValue({ id: 1 }),
+			findUserInOrganization: vi.fn().mockResolvedValue({ id: 1, role: 'owner' }),
+			findUserByEmail: vi.fn().mockResolvedValue({ id: 2, organizationId: 1, role: 'owner' })
+		});
+
+		const result = await addOrganizationAdmin(repo, {
+			organizationId: 1,
+			requestingUserId: 1,
+			targetUserEmail: 'owner2@example.com'
+		});
+
+		expect(result.success).toBe(false);
+		expect(repo.updateUserRole).not.toHaveBeenCalled();
 	});
 });
 
@@ -313,5 +382,48 @@ describe('deleteOrganization', () => {
 		expect(result.success).toBe(true);
 		expect(repo.softDeleteProjectsByUserId).not.toHaveBeenCalled();
 		expect(repo.softDeleteOrganization).toHaveBeenCalledWith(1, expect.any(Date));
+	});
+});
+
+describe('createOrganization', () => {
+	const params = { userId: 1, name: 'Acme', slug: 'acme' };
+
+	it('creates an organization for a user without one', async () => {
+		const repo = {
+			findUserOrganizationId: vi.fn().mockResolvedValue({ organizationId: null }),
+			createOrganizationWithOwner: vi.fn().mockResolvedValue(undefined)
+		};
+		const result = await createOrganization(repo, params);
+		expect(result.success).toBe(true);
+		expect(repo.createOrganizationWithOwner).toHaveBeenCalledWith(params);
+	});
+
+	it('rejects a user who already belongs to an organization', async () => {
+		const repo = {
+			findUserOrganizationId: vi.fn().mockResolvedValue({ organizationId: 5 }),
+			createOrganizationWithOwner: vi.fn()
+		};
+		const result = await createOrganization(repo, params);
+		expect(result).toEqual({ success: false, error: '既に組織に所属しています' });
+		expect(repo.createOrganizationWithOwner).not.toHaveBeenCalled();
+	});
+
+	it('fails when the user does not exist', async () => {
+		const repo = {
+			findUserOrganizationId: vi.fn().mockResolvedValue(undefined),
+			createOrganizationWithOwner: vi.fn()
+		};
+		const result = await createOrganization(repo, params);
+		expect(result.success).toBe(false);
+		expect(repo.createOrganizationWithOwner).not.toHaveBeenCalled();
+	});
+
+	it('fails when the atomic update rolls back (race) or the repository throws', async () => {
+		const repo = {
+			findUserOrganizationId: vi.fn().mockResolvedValue({ organizationId: null }),
+			createOrganizationWithOwner: vi.fn().mockRejectedValue(new Error('db'))
+		};
+		const result = await createOrganization(repo, params);
+		expect(result.success).toBe(false);
 	});
 });

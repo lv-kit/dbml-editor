@@ -1,6 +1,10 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { organization, user } from '$lib/server/db/schema';
+import { user } from '$lib/server/db/schema';
+import {
+	createOrganization,
+	createOrganizationCreationRepository
+} from '$lib/server/services/organization';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -55,36 +59,16 @@ export const actions: Actions = {
 			});
 		}
 
-		try {
-			await db.transaction(async (tx) => {
-				const [created] = await tx
-					.insert(organization)
-					.values({
-						name: name.trim(),
-						slug: slug.trim()
-					})
-					.returning({ id: organization.id });
-
-				if (!created) {
-					tx.rollback();
-					return;
-				}
-
-				const updatedUsers = await tx
-					.update(user)
-					.set({ organizationId: created.id, role: 'owner' })
-					.where(and(eq(user.id, currentUser.id), isNull(user.deletedAt)))
-					.returning({ id: user.id });
-
-				if (updatedUsers.length === 0) {
-					tx.rollback();
-				}
-			});
-		} catch {
-			return fail(500, {
+		const result = await createOrganization(createOrganizationCreationRepository(db), {
+			userId: currentUser.id,
+			name: name.trim(),
+			slug: slug.trim()
+		});
+		if (!result.success) {
+			return fail(result.error === '既に組織に所属しています' ? 409 : 500, {
 				name: name,
 				slug: slug,
-				error: '組織の作成に失敗しました'
+				error: result.error
 			});
 		}
 

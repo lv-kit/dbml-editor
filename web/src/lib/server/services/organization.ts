@@ -1,6 +1,7 @@
-import { eq, and, isNull, or, sql } from 'drizzle-orm';
+import { eq, and, isNull, sql } from 'drizzle-orm';
 import { organization, user, project } from '$lib/server/db/schema';
 import type { DbClient } from '$lib/server/db';
+import { canChangeRole, validateMemberRole } from '$lib/members';
 
 export type OrganizationRole = 'owner' | 'admin';
 
@@ -18,6 +19,63 @@ export function canDeleteOrganization(role: string | null): boolean {
 	return role === 'owner';
 }
 
+export interface OrganizationCreationRepository {
+	findUserOrganizationId(userId: number): Promise<{ organizationId: number | null } | undefined>;
+	/** Inserts the organization and makes the user its owner atomically; rolls back (throws) if the user already has an organization. */
+	createOrganizationWithOwner(params: {
+		userId: number;
+		name: string;
+		slug: string;
+	}): Promise<void>;
+}
+
+export function createOrganizationCreationRepository(db: DbClient): OrganizationCreationRepository {
+	return {
+		async findUserOrganizationId(userId: number) {
+			const [row] = await db
+				.select({ organizationId: user.organizationId })
+				.from(user)
+				.where(and(eq(user.id, userId), isNull(user.deletedAt)));
+			return row;
+		},
+		async createOrganizationWithOwner({ userId, name, slug }) {
+			await db.transaction(async (tx) => {
+				const [created] = await tx
+					.insert(organization)
+					.values({ name, slug })
+					.returning({ id: organization.id });
+				if (!created) tx.rollback();
+
+				const updated = await tx
+					.update(user)
+					.set({ organizationId: created.id, role: 'owner' })
+					.where(and(eq(user.id, userId), isNull(user.deletedAt), isNull(user.organizationId)))
+					.returning({ id: user.id });
+				if (updated.length === 0) tx.rollback();
+			});
+		}
+	};
+}
+
+export async function createOrganization(
+	repo: OrganizationCreationRepository,
+	params: { userId: number; name: string; slug: string }
+): Promise<{ success: boolean; error?: string }> {
+	const current = await repo.findUserOrganizationId(params.userId);
+	if (!current) {
+		return { success: false, error: 'ユーザーが見つかりません' };
+	}
+	if (current.organizationId !== null) {
+		return { success: false, error: '既に組織に所属しています' };
+	}
+	try {
+		await repo.createOrganizationWithOwner(params);
+	} catch {
+		return { success: false, error: '組織の作成に失敗しました' };
+	}
+	return { success: true };
+}
+
 export interface OrganizationRepository {
 	findOrganizationById(id: number): Promise<{ id: number } | undefined>;
 	findUserInOrganization(
@@ -26,7 +84,7 @@ export interface OrganizationRepository {
 	): Promise<{ id: number; role: string | null } | undefined>;
 	findUserByEmail(
 		email: string
-	): Promise<{ id: number; organizationId: number | null } | undefined>;
+	): Promise<{ id: number; organizationId: number | null; role: string | null } | undefined>;
 	updateUserRole(userId: number, role: string, organizationId: number): Promise<{ id: number }[]>;
 	findUserIdsByOrganization(organizationId: number): Promise<{ id: number }[]>;
 	softDeleteProjectsByUserId(userId: number, deletedAt: Date): Promise<void>;
@@ -57,7 +115,7 @@ export function createOrganizationRepository(db: DbClient): OrganizationReposito
 		async findUserByEmail(email: string) {
 			const normalizedEmail = email.trim().toLowerCase();
 			const [u] = await db
-				.select({ id: user.id, organizationId: user.organizationId })
+				.select({ id: user.id, organizationId: user.organizationId, role: user.role })
 				.from(user)
 				.where(and(sql`lower(${user.email}) = ${normalizedEmail}`, isNull(user.deletedAt)));
 			return u;
@@ -67,11 +125,7 @@ export function createOrganizationRepository(db: DbClient): OrganizationReposito
 				.update(user)
 				.set({ role, organizationId })
 				.where(
-					and(
-						eq(user.id, userId),
-						isNull(user.deletedAt),
-						or(isNull(user.organizationId), eq(user.organizationId, organizationId))
-					)
+					and(eq(user.id, userId), isNull(user.deletedAt), eq(user.organizationId, organizationId))
 				)
 				.returning({ id: user.id });
 			return updated;
@@ -128,9 +182,21 @@ export async function addOrganizationAdmin(
 		return { success: false, error: '自分自身のロールは変更できません' };
 	}
 
-	// Prevent moving users from another organization
-	if (targetUser.organizationId && targetUser.organizationId !== organizationId) {
-		return { success: false, error: 'このユーザーは別の組織に所属しています' };
+	// Only existing members of this organization can be promoted; moving users who
+	// belong to no organization (or another one) requires an invitation flow
+	if (targetUser.organizationId !== organizationId) {
+		return { success: false, error: 'このユーザーは組織のメンバーではありません' };
+	}
+
+	// Same rule as the members page: owners are never demoted, admins cannot change admins
+	const requesterRole = requestingUser.role ?? '';
+	const targetRole = targetUser.role ?? '';
+	if (
+		!validateMemberRole(requesterRole) ||
+		!validateMemberRole(targetRole) ||
+		!canChangeRole(requesterRole, targetRole, 'admin')
+	) {
+		return { success: false, error: 'このユーザーのロールは変更できません' };
 	}
 
 	// Update target user's role and organization

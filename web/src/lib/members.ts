@@ -16,6 +16,8 @@ export function canChangeRole(
 	newRole: MemberRole
 ): boolean {
 	if (!canManageMembers(requestingUserRole)) return false;
+	// owners are never demoted through role changes (prevents ownerless organizations)
+	if (targetCurrentRole === 'owner') return false;
 	if (requestingUserRole === 'owner') return true;
 	// admin can change member role, but cannot promote to owner
 	if (requestingUserRole === 'admin') {
@@ -24,10 +26,7 @@ export function canChangeRole(
 	return false;
 }
 
-export function canRemoveMember(
-	requestingUserRole: MemberRole,
-	targetRole: MemberRole
-): boolean {
+export function canRemoveMember(requestingUserRole: MemberRole, targetRole: MemberRole): boolean {
 	if (!canManageMembers(requestingUserRole)) return false;
 	// owner can remove anyone except other owners
 	if (requestingUserRole === 'owner') return targetRole !== 'owner';
@@ -41,6 +40,7 @@ export function canEditMemberRole(
 	targetCurrentRole: MemberRole
 ): boolean {
 	if (!canManageMembers(requestingUserRole)) return false;
+	if (targetCurrentRole === 'owner') return false;
 	if (requestingUserRole === 'owner') return true;
 	// admin can only edit members' roles, not other admins or owners
 	if (requestingUserRole === 'admin') return targetCurrentRole === 'member';
