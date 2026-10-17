@@ -33,10 +33,6 @@
 	}: HTMLAttributes<HTMLDivElement> & { variant?: AlertVariant; children?: Snippet } = $props();
 </script>
 
-<div
-	class={cn(alertVariants({ variant }), className)}
-	role="alert"
-	{...restProps}
->
+<div class={cn(alertVariants({ variant }), className)} role="alert" {...restProps}>
 	{@render children?.()}
 </div>

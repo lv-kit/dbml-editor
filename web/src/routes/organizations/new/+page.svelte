@@ -91,12 +91,8 @@
 					</div>
 
 					<div class="flex gap-3">
-						<Button type="submit">
-							作成
-						</Button>
-						<Button href="/organizations" variant="outline">
-							キャンセル
-						</Button>
+						<Button type="submit">作成</Button>
+						<Button href="/organizations" variant="outline">キャンセル</Button>
 					</div>
 				</form>
 			</CardContent>

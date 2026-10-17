@@ -48,19 +48,9 @@
 					{/if}
 
 					<div class="mb-4">
-						<Label for="email" class="mb-1 block">
-							メールアドレス
-						</Label>
-						<Input
-							id="email"
-							type="email"
-							value={data.sessionEmail}
-							disabled
-							class="bg-gray-100"
-						/>
-						<p class="mt-1 text-xs text-gray-500">
-							認証されたメールアドレスが使用されます
-						</p>
+						<Label for="email" class="mb-1 block">メールアドレス</Label>
+						<Input id="email" type="email" value={data.sessionEmail} disabled class="bg-gray-100" />
+						<p class="mt-1 text-xs text-gray-500">認証されたメールアドレスが使用されます</p>
 					</div>
 
 					<div class="mb-6">
@@ -78,9 +68,7 @@
 						/>
 					</div>
 
-					<Button type="submit" class="w-full">
-						アカウントを作成
-					</Button>
+					<Button type="submit" class="w-full">アカウントを作成</Button>
 				</form>
 			</CardContent>
 		</Card>

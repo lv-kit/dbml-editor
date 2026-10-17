@@ -141,9 +141,7 @@
 									</div>
 
 									<div class="mb-4">
-										<Label for="role" class="mb-1 block">
-											権限
-										</Label>
+										<Label for="role" class="mb-1 block">権限</Label>
 										<select
 											id="role"
 											name="role"
@@ -159,14 +157,8 @@
 									</div>
 
 									<div class="flex gap-3">
-										<Button type="submit">
-											追加
-										</Button>
-										<Button
-											type="button"
-											variant="outline"
-											onclick={() => (showAddForm = false)}
-										>
+										<Button type="submit">追加</Button>
+										<Button type="button" variant="outline" onclick={() => (showAddForm = false)}>
 											キャンセル
 										</Button>
 									</div>
@@ -221,9 +213,7 @@
 													<option value="member" selected={member.role === 'member'}
 														>メンバー</option
 													>
-													<option value="admin" selected={member.role === 'admin'}
-														>管理者</option
-													>
+													<option value="admin" selected={member.role === 'admin'}>管理者</option>
 													{#if currentUserRole === 'owner'}
 														<option value="owner" selected={member.role === 'owner'}
 															>オーナー</option
@@ -232,7 +222,13 @@
 												</select>
 											</form>
 										{:else}
-											<Badge variant={member.role === 'owner' ? 'default' : member.role === 'admin' ? 'secondary' : 'outline'}>
+											<Badge
+												variant={member.role === 'owner'
+													? 'default'
+													: member.role === 'admin'
+														? 'secondary'
+														: 'outline'}
+											>
 												{roleLabel(member.role)}
 											</Badge>
 										{/if}

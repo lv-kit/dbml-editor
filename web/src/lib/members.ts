@@ -24,10 +24,7 @@ export function canChangeRole(
 	return false;
 }
 
-export function canRemoveMember(
-	requestingUserRole: MemberRole,
-	targetRole: MemberRole
-): boolean {
+export function canRemoveMember(requestingUserRole: MemberRole, targetRole: MemberRole): boolean {
 	if (!canManageMembers(requestingUserRole)) return false;
 	// owner can remove anyone except other owners
 	if (requestingUserRole === 'owner') return targetRole !== 'owner';

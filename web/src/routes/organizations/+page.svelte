@@ -12,9 +12,7 @@
 				<a href="/" class="text-sm text-gray-500 hover:text-gray-700">← DBMLエディタ</a>
 				<h1 class="text-2xl font-bold text-gray-800">組織一覧</h1>
 			</div>
-			<Button href="/organizations/new">
-				組織を作成
-			</Button>
+			<Button href="/organizations/new">組織を作成</Button>
 		</div>
 
 		{#if data.organizations.length === 0}
@@ -22,9 +20,7 @@
 				class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-white p-16"
 			>
 				<p class="mb-4 text-gray-500">組織がまだありません</p>
-				<Button href="/organizations/new">
-					最初の組織を作成
-				</Button>
+				<Button href="/organizations/new">最初の組織を作成</Button>
 			</div>
 		{:else}
 			<ul class="space-y-3">

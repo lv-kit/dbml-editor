@@ -11,7 +11,9 @@
 	<span class="cursor-help text-sm text-gray-400 hover:text-gray-200">Help</span>
 
 	{#if showTooltip}
-		<div class="absolute right-0 top-full z-50 mt-2 w-72 rounded-lg border border-gray-600 bg-gray-800 p-4 shadow-xl">
+		<div
+			class="absolute top-full right-0 z-50 mt-2 w-72 rounded-lg border border-gray-600 bg-gray-800 p-4 shadow-xl"
+		>
 			<h3 class="mb-3 text-sm font-bold text-gray-100">操作ガイド</h3>
 			<table class="w-full text-xs">
 				<tbody>

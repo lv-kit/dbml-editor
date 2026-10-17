@@ -34,8 +34,7 @@ export async function verifyFirebaseIdToken(idToken: string): Promise<FirebaseTo
 
 	// Extract provider from firebase sign-in info
 	const firebasePayload = payload['firebase'] as
-		| { sign_in_provider?: string; identities?: Record<string, unknown> }
-		| undefined;
+		{ sign_in_provider?: string; identities?: Record<string, unknown> } | undefined;
 	const provider = firebasePayload?.sign_in_provider;
 
 	return {

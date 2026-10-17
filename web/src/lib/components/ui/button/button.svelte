@@ -8,8 +8,7 @@
 		variants: {
 			variant: {
 				default: 'bg-primary text-primary-foreground shadow hover:bg-primary/90',
-				destructive:
-					'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90',
+				destructive: 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90',
 				outline:
 					'border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground',
 				secondary: 'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80',
@@ -55,11 +54,17 @@
 </script>
 
 {#if isAnchor}
-	<a class={cn(buttonVariants({ variant, size }), className)} {...restProps as HTMLAnchorAttributes}>
+	<a
+		class={cn(buttonVariants({ variant, size }), className)}
+		{...restProps as HTMLAnchorAttributes}
+	>
 		{@render children?.()}
 	</a>
 {:else}
-	<button class={cn(buttonVariants({ variant, size }), className)} {...restProps as HTMLButtonAttributes}>
+	<button
+		class={cn(buttonVariants({ variant, size }), className)}
+		{...restProps as HTMLButtonAttributes}
+	>
 		{@render children?.()}
 	</button>
 {/if}

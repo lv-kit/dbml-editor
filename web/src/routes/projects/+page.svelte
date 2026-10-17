@@ -19,9 +19,7 @@
 				<h1 class="text-xl font-bold text-gray-800">プロジェクト一覧</h1>
 				<p class="text-sm text-gray-500">{data.user.name}さんのプロジェクト</p>
 			</div>
-			<Button onclick={() => (showForm = true)}>
-				新規プロジェクト
-			</Button>
+			<Button onclick={() => (showForm = true)}>新規プロジェクト</Button>
 		</div>
 	</header>
 
@@ -36,9 +34,7 @@
 					{/if}
 					<form method="POST" action="?/create" use:enhance class="flex items-end gap-3">
 						<div class="flex-1">
-							<Label for="project-name" class="mb-1 block">
-								プロジェクト名
-							</Label>
+							<Label for="project-name" class="mb-1 block">プロジェクト名</Label>
 							<Input
 								id="project-name"
 								name="name"
@@ -49,14 +45,8 @@
 								placeholder="例: マイプロジェクト"
 							/>
 						</div>
-						<Button type="submit">
-							作成
-						</Button>
-						<Button
-							type="button"
-							variant="outline"
-							onclick={() => (showForm = false)}
-						>
+						<Button type="submit">作成</Button>
+						<Button type="button" variant="outline" onclick={() => (showForm = false)}>
 							キャンセル
 						</Button>
 					</form>
@@ -70,17 +60,12 @@
 			>
 				<span class="mb-4 text-4xl">📁</span>
 				<p class="mb-4 text-gray-500">プロジェクトがまだありません</p>
-				<Button onclick={() => (showForm = true)}>
-					最初のプロジェクトを作成
-				</Button>
+				<Button onclick={() => (showForm = true)}>最初のプロジェクトを作成</Button>
 			</div>
 		{:else}
 			<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				{#each data.projects as proj}
-					<a
-						href="/projects/{proj.id}"
-						class="block"
-					>
+					<a href="/projects/{proj.id}" class="block">
 						<Card class="h-full transition hover:border-blue-300 hover:shadow-md">
 							<CardContent class="p-5">
 								<h2 class="font-medium text-gray-800">{proj.name}</h2>

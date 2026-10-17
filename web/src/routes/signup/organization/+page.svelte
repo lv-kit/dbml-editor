@@ -90,9 +90,7 @@
 						<p class="mt-1 text-xs text-gray-400">半角英数字とハイフンのみ使用できます</p>
 					</div>
 
-					<Button type="submit" class="w-full">
-						次へ
-					</Button>
+					<Button type="submit" class="w-full">次へ</Button>
 				</form>
 			</CardContent>
 		</Card>

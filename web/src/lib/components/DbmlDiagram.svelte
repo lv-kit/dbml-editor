@@ -1005,7 +1005,14 @@
 							stroke-width="1"
 						/>
 						<!-- Sticky note top accent -->
-						<rect x={noteX} y={noteY} width={noteWidth} height="4" rx="3" fill={colors.noteAccent} />
+						<rect
+							x={noteX}
+							y={noteY}
+							width={noteWidth}
+							height="4"
+							rx="3"
+							fill={colors.noteAccent}
+						/>
 						<!-- Note label -->
 						<text
 							x={noteX + 8}

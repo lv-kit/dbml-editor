@@ -41,7 +41,13 @@
 									<p class="font-medium text-gray-800">{member.name}</p>
 									<p class="text-sm text-gray-500">{member.email}</p>
 								</div>
-								<Badge variant={member.role === 'owner' ? 'default' : member.role === 'admin' ? 'secondary' : 'outline'}>
+								<Badge
+									variant={member.role === 'owner'
+										? 'default'
+										: member.role === 'admin'
+											? 'secondary'
+											: 'outline'}
+								>
 									{member.role === 'owner'
 										? 'オーナー'
 										: member.role === 'admin'
@@ -62,16 +68,8 @@
 				</CardHeader>
 				<CardContent>
 					<form method="POST" action="?/addAdmin" class="flex gap-3">
-						<Input
-							type="email"
-							name="email"
-							placeholder="メールアドレス"
-							required
-							class="flex-1"
-						/>
-						<Button type="submit">
-							追加
-						</Button>
+						<Input type="email" name="email" placeholder="メールアドレス" required class="flex-1" />
+						<Button type="submit">追加</Button>
 					</form>
 				</CardContent>
 			</Card>
@@ -87,9 +85,7 @@
 						この操作は元に戻せません。組織に紐づくすべてのプロジェクトも削除されます。
 					</p>
 					<form method="POST" action="?/delete">
-						<Button type="submit" variant="destructive">
-							組織を削除
-						</Button>
+						<Button type="submit" variant="destructive">組織を削除</Button>
 					</form>
 				</CardContent>
 			</Card>

@@ -8,11 +8,7 @@
 	let { isDark, onclick, class: className = '' }: Props = $props();
 </script>
 
-<button
-	{onclick}
-	class={className}
-	aria-label="ダークモード切替"
->
+<button {onclick} class={className} aria-label="ダークモード切替">
 	{#if isDark}
 		<!-- Sun icon -->
 		<svg
