@@ -4,10 +4,11 @@ import { verifyFirebaseIdToken } from '$lib/server/firebase-auth';
 import { createSessionCookie, COOKIE_NAME, SESSION_DURATION_SECONDS } from '$lib/server/session';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
-	let idToken: string;
+	let idToken: unknown;
 	try {
-		const body = await request.json();
-		idToken = body.idToken;
+		const body: unknown = await request.json();
+		idToken =
+			typeof body === 'object' && body !== null && 'idToken' in body ? body.idToken : undefined;
 	} catch {
 		throw error(400, 'Invalid request body');
 	}

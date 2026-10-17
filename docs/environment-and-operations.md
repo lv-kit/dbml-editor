@@ -6,7 +6,7 @@
 
 | 変数 | 必須 | 用途 | 未設定時の挙動 |
 |---|---|---|---|
-| `DATABASE_URL` | ○ | PostgreSQL 接続文字列（Drizzle / `postgres-js`） | 起動時に例外（`DATABASE_URL is not set`） |
+| `DATABASE_URL` | ○ | PostgreSQL 接続文字列（Drizzle / `postgres-js`） | 起動時・ビルド時に例外（`DATABASE_URL is not set`）。`pnpm run build` や E2E でもダミー値が必要 |
 | `AUTH_SECRET` | ○ | セッション JWT の HS256 署名鍵 | セッション発行・検証時に例外（`AUTH_SECRET is not set`） |
 | `FIREBASE_API_KEY` | ○ | Firebase クライアント設定。**プロバイダ有効判定の前提条件** | 全ログイン方法が無効になり、ログイン画面は「ログイン方法が設定されていません」を表示 |
 | `FIREBASE_AUTH_DOMAIN` | ○ | Firebase クライアント設定 | 空文字として渡り Firebase 初期化が失敗する |
@@ -81,7 +81,7 @@ E2E は Playwright（`**/*.e2e.{ts,js}`）。`pnpm run build && pnpm run preview
 |---|---|
 | web ビルド | `pnpm run build`（出力 `.svelte-kit/cloudflare/`） |
 | web ローカルプレビュー | `pnpm run preview`（`wrangler dev`、port 4173） |
-| Cloudflare 型生成 | `pnpm run gen`（`wrangler types`） |
+| Cloudflare 型生成 | `pnpm run gen`（`wrangler types`）。`worker-configuration.d.ts` は gitignore 対象のため、クリーン clone では `check` の前に実行する |
 | studio ビルド | `pnpm run tauri:build` / `tauri:build:mac`（`.app`）/ `tauri:build:windows`（`nsis`, `msi`） |
 | Storybook | `pnpm run storybook`（port 6006）/ `pnpm run build-storybook` |
 
@@ -90,3 +90,12 @@ E2E は Playwright（`**/*.e2e.{ts,js}`）。`pnpm run build && pnpm run preview
 ## Git 運用
 
 ベースブランチは `main`（保護対象）。作業ブランチは `<tool>/<topic>`。詳細は `.claude/rules/common/git-workflow.md`。
+
+## CI
+
+`.github/workflows/ci.yml` が PR と `main` への push で実行する。
+
+- `web`: `pnpm install --frozen-lockfile` → `gen` → `paraglide-js compile`（`src/lib/paraglide` は gitignore 対象で、vite 経由以外では生成されない）→ `check` → `test:unit --run`（Chromium を導入、ダミー `DATABASE_URL` を設定）。`pnpm run lint` は prettier / eslint の既存違反が残るため `continue-on-error`（解消後に外す）
+- `studio`: `pnpm install --frozen-lockfile` → `check` → `test`
+- E2E（Playwright）は build・preview・DB が必要なため CI の対象外（未整備）
+- TypeScript は `web/` も 5.9 系に固定する。TypeScript 7 は svelte-check と typescript-eslint が未対応のため上げない

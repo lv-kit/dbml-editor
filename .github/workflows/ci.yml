@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    env:
+      DATABASE_URL: postgres://user:password@localhost:5432/ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run gen
+      - run: pnpm exec paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide
+      - run: pnpm run check
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm run test:unit --run
+      # prettier / eslint の既存違反が残っているため、解消までは情報用 (#35)
+      - run: pnpm run lint
+        continue-on-error: true
+
+  studio:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dbml-studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: dbml-studio/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: dbml-studio/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run check
+      - run: pnpm run test
