@@ -24,7 +24,7 @@
 |---|---|---|
 | `id` | `serial` | PK |
 | `name` | `text` | NOT NULL |
-| `email` | `text` | NOT NULL, UNIQUE |
+| `email` | `text` | NOT NULL（一意性は下記の部分ユニークインデックスで担保） |
 | `user_type` | `text` | NOT NULL |
 | `role` | `text` | NOT NULL, DEFAULT `'member'` |
 | `organization_id` | `integer` | FK → `organization.id`、NULL 可 |
@@ -36,6 +36,9 @@
 制約と運用ルール:
 
 - `email` は保存前に `trim().toLowerCase()` で正規化する。照合も `lower(email)` で行う
+- 一意性は部分ユニークインデックス `user_email_active_unique`（`lower(email)` かつ `deleted_at IS NULL`）で担保する。論理削除済みの行とは重複できるため、削除後に同じメールで再登録・再追加できる
+- マイグレーション `0001` の適用前に、未削除行の重複が無いことを確認する: `SELECT lower(email), count(*) FROM "user" WHERE deleted_at IS NULL GROUP BY 1 HAVING count(*) > 1;`（1行でも返ると `CREATE UNIQUE INDEX` が失敗する）
+- インデックス: `user_organization_id_idx`（`organization_id`）、`project_user_id_idx`（`project.user_id`）
 - `user_type` の値は `'personal'`（個人利用）または `'corporate'`（法人利用）。DB 制約ではなくアプリ層の取り扱い
 - `role` の値は `'owner'` / `'admin'` / `'member'`。DB 制約ではなくアプリ層で検証する（[organizations-and-members.md](organizations-and-members.md)）
 - `organization_id` が NULL なら組織未所属。**1ユーザーは最大1組織**
@@ -82,7 +85,7 @@ SvelteKit テンプレート由来で、アプリコードから参照してい�
 | 操作 | 影響範囲 |
 |---|---|
 | メンバー削除 | 対象 `user` の `deleted_at` のみ。プロジェクトは残る |
-| 組織削除 | 組織所属ユーザー全員の `project` を論理削除 → `organization` を論理削除。`user` 行は残る |
+| 組織削除 | 1トランザクションで、組織所属ユーザー全員の `project` を論理削除 → 所属ユーザーを未所属に戻す（`organization_id = NULL`, `role = 'member'`）→ `organization` を論理削除。`user` 行は残る |
 
 ## マイグレーション
 

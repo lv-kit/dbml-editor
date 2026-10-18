@@ -1,4 +1,4 @@
-import { eq, and, isNull, or, sql } from 'drizzle-orm';
+import { eq, and, inArray, isNull, or, sql } from 'drizzle-orm';
 import { organization, user, project } from '$lib/server/db/schema';
 import type { DbClient } from '$lib/server/db';
 
@@ -28,9 +28,11 @@ export interface OrganizationRepository {
 		email: string
 	): Promise<{ id: number; organizationId: number | null } | undefined>;
 	updateUserRole(userId: number, role: string, organizationId: number): Promise<{ id: number }[]>;
-	findUserIdsByOrganization(organizationId: number): Promise<{ id: number }[]>;
-	softDeleteProjectsByUserId(userId: number, deletedAt: Date): Promise<void>;
-	softDeleteOrganization(organizationId: number, deletedAt: Date): Promise<void>;
+	/**
+	 * In one transaction: soft-delete the projects of the organization's members, detach the
+	 * members (organization_id = NULL, role = 'member'), then soft-delete the organization.
+	 */
+	deleteOrganizationWithMembers(organizationId: number, deletedAt: Date): Promise<void>;
 }
 
 /**
@@ -76,17 +78,26 @@ export function createOrganizationRepository(db: DbClient): OrganizationReposito
 				.returning({ id: user.id });
 			return updated;
 		},
-		async findUserIdsByOrganization(organizationId: number) {
-			return db.select({ id: user.id }).from(user).where(eq(user.organizationId, organizationId));
-		},
-		async softDeleteProjectsByUserId(userId: number, deletedAt: Date) {
-			await db
-				.update(project)
-				.set({ deletedAt })
-				.where(and(eq(project.userId, userId), isNull(project.deletedAt)));
-		},
-		async softDeleteOrganization(organizationId: number, deletedAt: Date) {
-			await db.update(organization).set({ deletedAt }).where(eq(organization.id, organizationId));
+		async deleteOrganizationWithMembers(organizationId: number, deletedAt: Date) {
+			await db.transaction(async (tx) => {
+				await tx
+					.update(project)
+					.set({ deletedAt })
+					.where(
+						and(
+							isNull(project.deletedAt),
+							inArray(
+								project.userId,
+								tx.select({ id: user.id }).from(user).where(eq(user.organizationId, organizationId))
+							)
+						)
+					);
+				await tx
+					.update(user)
+					.set({ organizationId: null, role: 'member' })
+					.where(eq(user.organizationId, organizationId));
+				await tx.update(organization).set({ deletedAt }).where(eq(organization.id, organizationId));
+			});
 		}
 	};
 }
@@ -167,14 +178,12 @@ export async function deleteOrganization(
 		return { success: false, error: '組織を削除する権限がありません' };
 	}
 
-	const now = new Date();
-
-	// Soft delete all projects belonging to users in this organization
-	const orgUsers = await repo.findUserIdsByOrganization(organizationId);
-	await Promise.all(orgUsers.map((orgUser) => repo.softDeleteProjectsByUserId(orgUser.id, now)));
-
-	// Soft delete the organization
-	await repo.softDeleteOrganization(organizationId, now);
+	try {
+		await repo.deleteOrganizationWithMembers(organizationId, new Date());
+	} catch (error) {
+		console.error('deleteOrganization failed', { organizationId, error });
+		return { success: false, error: '組織の削除に失敗しました' };
+	}
 
 	return { success: true };
 }

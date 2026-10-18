@@ -13,9 +13,7 @@ function createMockRepo(overrides: Partial<OrganizationRepository> = {}): Organi
 		findUserInOrganization: vi.fn().mockResolvedValue(undefined),
 		findUserByEmail: vi.fn().mockResolvedValue(undefined),
 		updateUserRole: vi.fn().mockResolvedValue([{ id: 1 }]),
-		findUserIdsByOrganization: vi.fn().mockResolvedValue([]),
-		softDeleteProjectsByUserId: vi.fn().mockResolvedValue(undefined),
-		softDeleteOrganization: vi.fn().mockResolvedValue(undefined),
+		deleteOrganizationWithMembers: vi.fn().mockResolvedValue(undefined),
 		...overrides
 	};
 }
@@ -279,11 +277,10 @@ describe('deleteOrganization', () => {
 		expect(result.error).toBe('組織を削除する権限がありません');
 	});
 
-	it('should succeed when owner deletes organization and soft-delete projects', async () => {
+	it('should delete the organization together with its members and projects in one repository call', async () => {
 		const repo = createMockRepo({
 			findOrganizationById: vi.fn().mockResolvedValue({ id: 1 }),
-			findUserInOrganization: vi.fn().mockResolvedValue({ id: 1, role: 'owner' }),
-			findUserIdsByOrganization: vi.fn().mockResolvedValue([{ id: 1 }, { id: 2 }])
+			findUserInOrganization: vi.fn().mockResolvedValue({ id: 1, role: 'owner' })
 		});
 
 		const result = await deleteOrganization(repo, {
@@ -292,26 +289,30 @@ describe('deleteOrganization', () => {
 		});
 
 		expect(result.success).toBe(true);
-		// Should soft delete projects for each user in the organization
-		expect(repo.softDeleteProjectsByUserId).toHaveBeenCalledTimes(2);
-		// Should soft delete the organization
-		expect(repo.softDeleteOrganization).toHaveBeenCalledWith(1, expect.any(Date));
+		expect(repo.deleteOrganizationWithMembers).toHaveBeenCalledTimes(1);
+		expect(repo.deleteOrganizationWithMembers).toHaveBeenCalledWith(1, expect.any(Date));
 	});
 
-	it('should soft-delete organization even with no users', async () => {
+	it('should not delete anything when the caller is not an owner', async () => {
+		const repo = createMockRepo({
+			findOrganizationById: vi.fn().mockResolvedValue({ id: 1 }),
+			findUserInOrganization: vi.fn().mockResolvedValue({ id: 2, role: 'admin' })
+		});
+
+		await deleteOrganization(repo, { organizationId: 1, requestingUserId: 2 });
+
+		expect(repo.deleteOrganizationWithMembers).not.toHaveBeenCalled();
+	});
+
+	it('should report failure when the repository throws', async () => {
 		const repo = createMockRepo({
 			findOrganizationById: vi.fn().mockResolvedValue({ id: 1 }),
 			findUserInOrganization: vi.fn().mockResolvedValue({ id: 1, role: 'owner' }),
-			findUserIdsByOrganization: vi.fn().mockResolvedValue([])
+			deleteOrganizationWithMembers: vi.fn().mockRejectedValue(new Error('db'))
 		});
 
-		const result = await deleteOrganization(repo, {
-			organizationId: 1,
-			requestingUserId: 1
-		});
+		const result = await deleteOrganization(repo, { organizationId: 1, requestingUserId: 1 });
 
-		expect(result.success).toBe(true);
-		expect(repo.softDeleteProjectsByUserId).not.toHaveBeenCalled();
-		expect(repo.softDeleteOrganization).toHaveBeenCalledWith(1, expect.any(Date));
+		expect(result).toEqual({ success: false, error: '組織の削除に失敗しました' });
 	});
 });
