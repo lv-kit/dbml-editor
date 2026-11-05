@@ -66,6 +66,7 @@
 - パッケージマネージャーは pnpm に統一する。`npm`、`bun`、`yarn` のコマンド、ロックファイル、設定を新たに追加しない。
 - コード変更後は対象テスト、`pnpm run check`、`pnpm run lint`、全テストを実行する。
 - `web/` を変更した場合は `web/` で `docker compose up --build` を実行し、コンテナ内で検証する。UI を変更した場合は、日本語フォントを確認したうえで Playwright のスクリーンショットを撮影する。
+- 動作確認・テストのために自分が起動した Docker コンテナは、使い終わったら必ず停止し、Volume も削除する（`docker compose down -v`。`-f` 指定で起動したときは同じ引数を付ける）。対象はこのタスクで自分が起動した compose プロジェクトだけ。ユーザーが先に起動していたコンテナ・Volume や他プロジェクトのものは停止・削除せず、`docker system prune` / `docker volume prune` は使わない。
 
 ## 変更の完了条件
 
