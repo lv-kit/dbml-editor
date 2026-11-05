@@ -17,8 +17,6 @@
 | `web/` | `pnpm run check` | `pnpm run lint` / `pnpm run format` | `pnpm run test:unit --run` / `pnpm run test:e2e` |
 | `dbml-studio/` | `pnpm run check` | （web の prettier 設定に準拠） | `pnpm run test` |
 
-> パッケージマネージャは **pnpm に統一**。`npm` / `bun` / `yarn` のコマンド・ロックファイル・設定を追加しない。
-
 ## ファイルサイズ
 
 - 1 モジュール 1 責務。**800 行超で分割を強く推奨**（600 行で予告警告）。hook `post-edit-file-size` が警告する

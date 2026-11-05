@@ -14,11 +14,10 @@
 ## PR 手順
 
 1. 作業ブランチで実装 → ローカル CI 相当（`.claude/rules/common/testing.md`）を通す
-2. 汎用 reviewer と変更領域に応じた専門 reviewer を実差分へ実行する
-3. 指摘があれば修正 → 影響検査 → 同じ reviewer で再レビューを、指摘ゼロまで繰り返す
-4. `/pr` から専用 `git-publisher` に委譲する（base=`main` 固定）
-5. **既存 PR がある場合は新規 PR を作らず、その head ブランチへ push して更新する**
-6. PR テンプレート（`.github/pull_request_template.md`）のレビュー観点を満たす
+2. `.claude/rules/common/code-review.md` の完了ゲート（指摘ゼロまで reviewer ループ）を満たす
+3. `/pr` から専用 `git-publisher` に委譲する（base=`main` 固定）
+4. **既存 PR がある場合は新規 PR を作らず、その head ブランチへ push して更新する**
+5. PR テンプレート（`.github/pull_request_template.md`）のレビュー観点を満たす
 
 ## hook による自動防御（Claude Code）
 
