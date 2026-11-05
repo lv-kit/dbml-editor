@@ -1,13 +1,10 @@
 # svelte/patterns（Svelte/SvelteKit 規約の正本）
 
-> **正本**: Svelte 5 / SvelteKit のコーディングとUI規約。共通の責務分割は `AGENTS.md`。
+> **正本**: Svelte 5 / SvelteKit 固有規約。共通規約・Svelte MCP の手順は `AGENTS.md`。
 
 ## Svelte 5
 
 - **runes を使う**（`$state` / `$derived` / `$effect` / `$props`）。旧来の `export let` / reactive `$:` を新規に使わない
-- コンポーネントは表示・入力・状態・外部連携を混在させすぎない。独立してテストできるロジックは `.ts` へ分離する
-- Svelte コードを書いたら **Svelte MCP の `svelte-autofixer` を問題がなくなるまで実行**する
-- 新規 API 利用前に Svelte MCP（`list-sections` → `get-documentation`）で公式ドキュメントを確認する
 
 ## SvelteKit
 
@@ -17,8 +14,7 @@
 
 ## UI
 
-- **shadcn コンポーネントを優先**、Tailwind CSS で構成する（`components.json` 準拠）
-- 色は既存トークンを再利用し、コントラストを確保する。独自スタイルをむやみに増やさない
+- shadcn・Tailwind・色トークンは `AGENTS.md` の「Svelte と UI」節に従う（`components.json` 準拠）
 - ダークモード対応を壊さない
 
 ## Tauri（dbml-studio/）
