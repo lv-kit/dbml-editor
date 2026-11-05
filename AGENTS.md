@@ -82,3 +82,14 @@
 ## Svelte MCP
 
 Svelte または SvelteKit に関する作業では、最初に `list-sections` を実行し、関連する全セクションを `get-documentation` で取得する。Svelte コードを書いた場合は `svelte-autofixer` を問題がなくなるまで実行する。プロジェクト内のファイルを書いた場合は Playground link を生成しない。
+
+## Worktree・PR・merge の運用
+
+AIエージェントは、次の3点に従う。他の節に merge の承認を求める記述があっても、この節を優先する。
+
+1. **worktree は後始末する。** 作業用に作成した git worktree は、作業を終了したとき、またはその PR を merge したときに削除する（`git worktree remove <path>`、不要になったローカルブランチの削除、`git worktree prune`）。未コミット・未 push の変更が残っているときは、削除せずユーザーへ報告する。
+2. **PR 作成までは自動で行う。** 変更を実装したら、確認を待たずにコミット・push・PR 作成まで実施する。
+3. **PR は自動で merge してよい。** ユーザーから「merge しない」「確認してから merge」などの明示的な指示がない限り、PR を merge する。次のときは merge せず、状況をユーザーへ報告する。
+   - 必須 CI が、課金・利用枠以外の理由で失敗している
+   - 未対応の PR コメントや、ブロッキング指摘が残っている
+   - production へのデプロイ、課金ジョブの起動、第三者リソース・認証情報の変更を伴う（これらは従来どおりユーザーの明示承認を要する。この規定の対象外）
