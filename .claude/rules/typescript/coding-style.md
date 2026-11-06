@@ -9,7 +9,7 @@ paths:
 # typescript/coding-style（TypeScript 規約の正本）
 
 > **正本**: TypeScript 固有の型・命名規約。共通原則は `.claude/rules/common/coding-style.md`、
-> 詳細は `AGENTS.md` の「TypeScript と設計」節（重複記載しない）。
+> `AGENTS.md` の「TypeScript と設計」節と整合させる（変更時は両方を更新する）。
 
 ## 型
 

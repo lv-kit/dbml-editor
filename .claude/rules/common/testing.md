@@ -2,7 +2,7 @@
 paths:
   - "web/src/**/*.test.ts"
   - "web/src/**/*.spec.ts"
-  - "web/e2e/**"
+  - "web/src/**/*.e2e.ts"
   - "dbml-studio/src/**/*.test.ts"
   - "dbml-studio/src/**/*.spec.ts"
 ---
