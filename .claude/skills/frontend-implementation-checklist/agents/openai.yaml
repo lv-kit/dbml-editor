@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Implementation Checklist"
+  short_description: "Frontend UI implementation checklist"
+  default_prompt: "$frontend-implementation-checklist Apply this checklist to the current frontend UI task."
