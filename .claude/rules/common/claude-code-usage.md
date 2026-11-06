@@ -16,7 +16,6 @@
 
 - 大量の tool call を伴う調査は `code-explorer` / `Explore` に委譲し、結果のダイジェストだけ受け取る（main context を汚さない）
 - レビューは `code-reviewer` と変更領域に応じた専門 reviewer へ。指摘がゼロになるまで修正・影響検査・同じ観点の再レビューを繰り返す
-- agent に指定したモデルと effort は無断で別モデルへ置換しない。利用不可の場合は停止して不足を報告する
 - agy（Antigravity/Gemini）への委譲は break-even を超える一括作業のみ（大量スキャフォールド・網羅テスト生成・移行）。小さいタスクは自分でやる
 
 ## 3. context 管理

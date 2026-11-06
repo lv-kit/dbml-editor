@@ -16,8 +16,7 @@ paths:
 | `web/` | SvelteKit Web | Cloudflare Workers（wrangler）+ Drizzle + Firebase Auth |
 | `dbml-studio/` | SvelteKit + Tauri | デスクトップ（Tauri src-tauri） |
 
-- ブラウザ固有 / Tauri 固有 / サーバ固有の API を**共有モジュールに持ち込まない**
-- 両アプリで同一ロジックを変更するときは、片方だけ直して仕様差分を作らない
+- 共有モジュールの境界規則は `AGENTS.md`「プロジェクト境界」に従う
 
 ## web/ の層構造
 

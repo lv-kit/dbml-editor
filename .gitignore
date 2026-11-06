@@ -4,3 +4,7 @@
 .claude/settings.local.json
 .claude/worktrees/
 .claude/state/
+
+# Python キャッシュ
+__pycache__/
+*.pyc
