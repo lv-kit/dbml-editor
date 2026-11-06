@@ -1,3 +1,9 @@
+---
+paths:
+  - "web/src/**"
+  - "dbml-studio/src/**"
+---
+
 # coding-style（共通コーディング原則）
 
 > **正本**: 具体的なコーディング規約（TS・命名・責務分割・副作用）は `AGENTS.md`。

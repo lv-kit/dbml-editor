@@ -1,3 +1,10 @@
+---
+paths:
+  - "web/src/**"
+  - "dbml-studio/src/**"
+  - "dbml-studio/src-tauri/**"
+---
+
 # patterns（採用アーキテクチャの正本）
 
 > **正本**: 層構造と各層の責務・禁止事項。プロジェクト境界の原則は `AGENTS.md`。
