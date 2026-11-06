@@ -1,3 +1,11 @@
+---
+paths:
+  - "web/src/**"
+  - "web/.env.example"
+  - "dbml-studio/src/**"
+  - "dbml-studio/src-tauri/**"
+---
+
 # security（セキュリティの正本）
 
 > **正本**: コミット前セキュリティチェックリストと hook 自動防御の対応表。

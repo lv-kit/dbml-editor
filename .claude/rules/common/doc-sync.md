@@ -1,3 +1,11 @@
+---
+paths:
+  - "web/src/lib/server/db/schema.ts"
+  - "web/.env.example"
+  - "web/src/routes/**"
+  - ".claude/**"
+---
+
 # doc-sync（ドキュメント同期の正本）
 
 > **正本**: コードとセットで更新すべきドキュメントと、その同期規則。どの AI ツールでも適用する。

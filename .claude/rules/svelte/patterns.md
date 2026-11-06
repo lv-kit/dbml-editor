@@ -1,3 +1,12 @@
+---
+paths:
+  - "web/src/**/*.svelte"
+  - "web/src/**/*.svelte.ts"
+  - "dbml-studio/src/**/*.svelte"
+  - "dbml-studio/src/**/*.svelte.ts"
+  - "dbml-studio/src-tauri/**/*.rs"
+---
+
 # svelte/patterns（Svelte/SvelteKit 規約の正本）
 
 > **正本**: Svelte 5 / SvelteKit のコーディングとUI規約。共通の責務分割は `AGENTS.md`。

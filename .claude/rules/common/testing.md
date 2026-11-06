@@ -1,3 +1,12 @@
+---
+paths:
+  - "web/src/**/*.test.ts"
+  - "web/src/**/*.spec.ts"
+  - "web/e2e/**"
+  - "dbml-studio/src/**/*.test.ts"
+  - "dbml-studio/src/**/*.spec.ts"
+---
+
 # testing（テスト方針の正本）
 
 > **正本**: テストスタック早見表・TDD サイクル・カバレッジ方針。

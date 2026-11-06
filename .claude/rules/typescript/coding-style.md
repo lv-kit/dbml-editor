@@ -1,3 +1,11 @@
+---
+paths:
+  - "web/src/**/*.ts"
+  - "web/src/**/*.tsx"
+  - "dbml-studio/src/**/*.ts"
+  - "dbml-studio/src/**/*.tsx"
+---
+
 # typescript/coding-style（TypeScript 規約の正本）
 
 > **正本**: TypeScript 固有の型・命名規約。共通原則は `.claude/rules/common/coding-style.md`、
