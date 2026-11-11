@@ -13,7 +13,8 @@
 
 ## PR 手順
 
-1. 作業ブランチで実装 → ローカル CI 相当（`.claude/rules/common/testing.md`）を通す
+1. PR 作成前に、対象領域の lint・型検査・テスト・ビルド検証をローカルで実行し、成功させる（手順は `.claude/workflows/ci-all.md` と `.claude/rules/common/testing.md`）
+   - CI はデプロイ関連の処理に限り、lint・型検査・テスト・ビルド検証のみを行う CI は設けない
 2. `.claude/rules/common/code-review.md` の完了ゲート（指摘ゼロまで reviewer ループ）を満たす
 3. `/pr` から専用 `git-publisher` に委譲する（base=`main` 固定）
 4. **既存 PR がある場合は新規 PR を作らず、その head ブランチへ push して更新する**
