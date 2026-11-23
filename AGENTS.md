@@ -68,6 +68,18 @@
 - `web/` を変更した場合は `web/` で `docker compose up --build` を実行し、コンテナ内で検証する。UI を変更した場合は、日本語フォントを確認したうえで Playwright のスクリーンショットを撮影する。
 - 動作確認・テストのために自分が起動した Docker コンテナは、使い終わったら必ず停止し、Volume も削除する（`docker compose down -v`。`-f` 指定で起動したときは同じ引数を付ける）。対象はこのタスクで自分が起動した compose プロジェクトだけ。ユーザーが先に起動していたコンテナ・Volume や他プロジェクトのものは停止・削除せず、`docker system prune` / `docker volume prune` は使わない。
 
+## コードレビュー
+
+コードレビューは Open Code Review（`@alibaba-group/open-code-review`、`ocr`）のデリゲーションモードで行う。`ocr` がファイル選定とルール解決を担い、レビュー自体は実行中のエージェント自身のモデルが行う（OCR側のLLM設定・APIキーは不要）。他のレビュー手段では代替しない。
+
+- Claude Code: `/open-code-review:delegate-review`（プロジェクト設定でプラグインを有効化済み。プロジェクトコマンド `/delegate-review` も同等）。使えない環境では `open-code-review-delegate` スキル。
+- Codex / Gemini CLI / Antigravity（ローカル・Cloudとも）: `open-code-review-delegate` スキル（`.agents/skills/open-code-review-delegate/SKILL.md`）。
+- 対象の指定: 作業ツリーは引数なし、PR範囲は `--from <base> --to <head>`、単一コミットは `--commit <hash>`（いずれも `ocr delegate preview` / `ocr delegate rule` に同じ指定を渡す）。
+- `ocr` が無ければ `npm install -g @alibaba-group/open-code-review` で導入する。導入・実行できないときはレビュー完了扱いにせず、理由を報告する。`ocr review` / `ocr scan` と `ocr config`、APIキーの入力は使わない。
+- 指摘は該当ファイル・行を読んで妥当性を確認してから修正する。
+
+このリポジトリ固有の reviewer（`code-reviewer`、`security-reviewer` など）による完了ゲートは廃止せず、上記の OCR デリゲーションレビューに追加して実行する。
+
 ## 変更の完了条件
 
 - 要件に関係しない整形や依存更新を混ぜない。

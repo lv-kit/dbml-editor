@@ -31,3 +31,4 @@
 - 変更内容に応じて `security-reviewer`、`svelte-reviewer`、`database-reviewer` などの専門 reviewer も実行する
 - 指摘が1件でもあれば完了にしない。指摘を修正し、影響するテスト・検査を再実行したうえで、同じ reviewer を再実行する
 - すべての reviewer が指摘ゼロになるまでこのループを続け、未検証領域は検査コマンドまたは根拠を引き継ぎノートへ記録する
+- 上記の reviewer に加えて、Open Code Review のデリゲーションモード（`/open-code-review:delegate-review`、`/delegate-review`、または `open-code-review-delegate` スキル。詳細は `AGENTS.md` の「コードレビュー」）を実差分へ実行する
