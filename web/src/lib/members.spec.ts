@@ -7,8 +7,7 @@ import {
 	canAssignRole,
 	canRemoveMember,
 	validateMemberRole,
-	validateEmail,
-	type MemberRole
+	validateEmail
 } from './members';
 
 describe('validateMemberRole', () => {

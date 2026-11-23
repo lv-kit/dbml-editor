@@ -65,7 +65,7 @@
       "Bash(pnpm run test:unit:*)",
       "Bash(pnpm run test)",
       "Bash(pnpm exec prettier:*)",
-      "Bash(pnpm exec eslint:*)",
+      "Bash(pnpm exec oxlint:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
