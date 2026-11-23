@@ -75,7 +75,7 @@
 - Claude Code: `/open-code-review:delegate-review`（プロジェクト設定でプラグインを有効化済み。プロジェクトコマンド `/delegate-review` も同等）。使えない環境では `open-code-review-delegate` スキル。
 - Codex / Gemini CLI / Antigravity（ローカル・Cloudとも）: `open-code-review-delegate` スキル（`.agents/skills/open-code-review-delegate/SKILL.md`）。
 - 対象の指定: 作業ツリーは引数なし、PR範囲は `--from <base> --to <head>`、単一コミットは `--commit <hash>`（いずれも `ocr delegate preview` / `ocr delegate rule` に同じ指定を渡す）。
-- `ocr` が無ければ `npm install -g @alibaba-group/open-code-review` で導入する。導入・実行できないときはレビュー完了扱いにせず、理由を報告する。`ocr review` / `ocr scan` と `ocr config`、APIキーの入力は使わない。
+- クラウド環境（Claude Code Cloud / Codex Cloud など、`ocr` が導入済みとは限らない環境）では、レビューの前に必ず `npm i -g @alibaba-group/open-code-review` を実行し、`ocr --version` で導入を確認する。ローカルでは `ocr` が無いときだけ導入する。導入・実行に失敗したらレビューを完了扱いにせず、理由を報告する。`ocr review` / `ocr scan` と `ocr config`、APIキーの入力は使わない。
 - 指摘は該当ファイル・行を読んで妥当性を確認してから修正する。
 
 このリポジトリ固有の reviewer（`code-reviewer`、`security-reviewer` など）による完了ゲートは廃止せず、上記の OCR デリゲーションレビューに追加して実行する。

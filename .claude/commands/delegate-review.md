@@ -16,7 +16,7 @@ ocr delegate preview [user-args]
 - If the user provides `--commit` or `-c`: pass through as-is.
 - If the user provides `--from` and `--to`: pass through as-is.
 - (Optional) Provide `--background "context"` or `-b "context"` for business context.
-- If `ocr` is not found, install it: `npm i -g @alibaba-group/open-code-review`.
+- In cloud environments (Claude Code Cloud, Codex Cloud, etc., where `ocr` may not be installed), always run `npm i -g @alibaba-group/open-code-review` first and confirm with `ocr --version`. Locally, install it only if `ocr` is not found. If installation or execution fails, do not treat the review as complete; report the reason.
 
 This outputs mode/ref metadata and the reviewable file list.
 
