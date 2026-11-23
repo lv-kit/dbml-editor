@@ -74,6 +74,7 @@
 
 - Claude Code: `/open-code-review:delegate-review`（プロジェクト設定でプラグインを有効化済み。プロジェクトコマンド `/delegate-review` も同等）。使えない環境では `open-code-review-delegate` スキル。
 - Codex / Gemini CLI / Antigravity（ローカル・Cloudとも）: `open-code-review-delegate` スキル（`.agents/skills/open-code-review-delegate/SKILL.md`）。
+- デリゲーションレビューのレビュー本体は専用エージェント `ocr-delegate-reviewer` に委譲する。モデルはClaude Code=Opus 5.5 / medium、Codex=GPT-6.1 Terra / medium、Gemini CLI・Antigravity=Gemini 3.8 Flash / medium に固定する（Claude Code `.claude/agents/`、Codex `.codex/agents/`、Gemini `.gemini/agents/`。Antigravityは `agy --model gemini-3.8-flash-medium --mode plan --sandbox` で `open-code-review-delegate` スキルの手順を実行）。エージェントが使えない環境では実行中のモデルのまま実行してよく、その場合はレポートに使ったモデルを明記する。
 - 対象の指定: 作業ツリーは引数なし、PR範囲は `--from <base> --to <head>`、単一コミットは `--commit <hash>`（いずれも `ocr delegate preview` / `ocr delegate rule` に同じ指定を渡す）。
 - クラウド環境（Claude Code Cloud / Codex Cloud など、`ocr` が導入済みとは限らない環境）では、レビューの前に必ず `npm i -g @alibaba-group/open-code-review` を実行し、`ocr --version` で導入を確認する。ローカルでは `ocr` が無いときだけ導入する。導入・実行に失敗したらレビューを完了扱いにせず、理由を報告する。`ocr review` / `ocr scan` と `ocr config`、APIキーの入力は使わない。
 - `ocr delegate preview` が除外したファイル（Excluded。Markdown などの文書、未対応拡張子）は ocr ではレビューできない。除外された文書は、実行中のモデル自身が差分を直接読んでレビューする（記述の誤り、既存の仕様・実装・他の文書との矛盾、古い記述の残り、リンク切れ、手順の再現性）。除外ファイルを未レビューのまま完了扱いにしない。

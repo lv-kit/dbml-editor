@@ -4,6 +4,8 @@ description: Run OCR in delegation mode — OCR handles file selection and rules
 
 Invoke OpenCodeReview (OCR) in delegation mode. OCR determines which files to review and provides review rules; you perform the actual code review using your own capabilities.
 
+Delegate the diff reading and review (Step 3 onward) to the `ocr-delegate-reviewer` subagent, which pins the model per tool: Opus 5.5 / medium on Claude Code, GPT-6.1 Terra / medium on Codex, and Gemini 3.8 Flash / medium on Gemini CLI and Antigravity. If the subagent is unavailable, run the review with the current model and state which model was used in the report.
+
 ## Workflow
 
 ### Step 1: Preview
