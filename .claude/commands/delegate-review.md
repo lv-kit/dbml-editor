@@ -56,9 +56,13 @@ After Git exits with code 0, read and review the entire file in chunks, then rem
 
 Then review focusing on: correctness, security, performance, error handling, concurrency, maintainability. Only comment on changed code (+ lines).
 
+### Step 3b: Review Excluded Documents
+
+Files that `ocr delegate preview` lists as Excluded (Markdown and other documents, unsupported extensions) cannot be reviewed by OCR. Read their diffs directly and review them yourself: factual errors, contradictions with existing specs, code, or other documents, stale text left behind, broken links, and reproducibility of procedures. Never treat an excluded file as done without review.
+
 ### Step 4: Report and Fix
 
-Record each previewed `(path, status)` as `reviewed` or `skipped`. Give a reason for every skipped entry, and report `total_files`, `reviewed_files`, `skipped_files`, and `coverage_rate`.
+Record each previewed `(path, status)` as `reviewed` or `skipped`, including the documents you reviewed directly in Step 3b. Give a reason for every skipped entry, and report `total_files`, `reviewed_files`, `skipped_files`, and `coverage_rate`. In the report, show the OCR-covered files and the directly reviewed documents separately.
 
 Classify each issue by severity:
 

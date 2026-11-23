@@ -76,9 +76,21 @@
 - Codex / Gemini CLI / Antigravity（ローカル・Cloudとも）: `open-code-review-delegate` スキル（`.agents/skills/open-code-review-delegate/SKILL.md`）。
 - 対象の指定: 作業ツリーは引数なし、PR範囲は `--from <base> --to <head>`、単一コミットは `--commit <hash>`（いずれも `ocr delegate preview` / `ocr delegate rule` に同じ指定を渡す）。
 - クラウド環境（Claude Code Cloud / Codex Cloud など、`ocr` が導入済みとは限らない環境）では、レビューの前に必ず `npm i -g @alibaba-group/open-code-review` を実行し、`ocr --version` で導入を確認する。ローカルでは `ocr` が無いときだけ導入する。導入・実行に失敗したらレビューを完了扱いにせず、理由を報告する。`ocr review` / `ocr scan` と `ocr config`、APIキーの入力は使わない。
+- `ocr delegate preview` が除外したファイル（Excluded。Markdown などの文書、未対応拡張子）は ocr ではレビューできない。除外された文書は、実行中のモデル自身が差分を直接読んでレビューする（記述の誤り、既存の仕様・実装・他の文書との矛盾、古い記述の残り、リンク切れ、手順の再現性）。除外ファイルを未レビューのまま完了扱いにしない。
+- レポートでは「ocr の対象」と「モデルが直接レビューした文書」を分けて示し、後者も網羅状況（`reviewed` / `skipped`）に含める。
 - 指摘は該当ファイル・行を読んで妥当性を確認してから修正する。
 
 このリポジトリ固有の reviewer（`code-reviewer`、`security-reviewer` など）による完了ゲートは廃止せず、上記の OCR デリゲーションレビューに追加して実行する。
+
+## 仕様と docs の更新
+
+仕様書（`SPEC.md` など）・設計書・README などの docs には、現在の仕様だけを書く。
+
+- issue や要望で仕様が変わるときは、同じ変更の中で関連する docs の該当箇所を新しい仕様に書き換え、不要になった旧仕様は削除する。追記して積み上げない。
+- issue 番号・日付・変更履歴・「以前は〜だった」を docs 本文に書かない。経緯は issue・PR・コミットメッセージに残す。
+- issue の内容（番号、タイトル、本文、コメントの要約、リンク）を仕様書へ転記・引用・参照しない。
+- 仕様が変わらないときは docs を変更しない。
+- 変更のたびに、関連する docs が現在のコードと一致しているかを確認する。
 
 ## 変更の完了条件
 
