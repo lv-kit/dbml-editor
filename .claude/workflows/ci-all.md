@@ -11,7 +11,7 @@
 ```bash
 cd web
 pnpm run check          # svelte-kit sync + svelte-check（型検査）
-pnpm run lint           # prettier --check + eslint
+pnpm run lint           # prettier --check + oxlint
 pnpm run test:unit --run
 # UI を変更した場合のみ:
 pnpm run test:e2e       # Playwright（日本語フォント確認・スクショ）

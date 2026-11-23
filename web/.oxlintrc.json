@@ -1,0 +1,40 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"plugins": ["typescript", "import"],
+	"categories": {
+		"correctness": "error"
+	},
+	"env": {
+		"builtin": true,
+		"browser": true,
+		"node": true
+	},
+	"ignorePatterns": [
+		".svelte-kit/**",
+		"build/**",
+		".wrangler/**",
+		"storybook-static/**",
+		"src/lib/paraglide/**"
+	],
+	"rules": {
+		"no-undef": "off",
+		"no-unused-vars": ["error", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+		"typescript/no-explicit-any": "error",
+		"typescript/ban-ts-comment": "error",
+		"typescript/no-non-null-asserted-optional-chain": "error",
+		"typescript/no-unnecessary-type-constraint": "error",
+		"typescript/prefer-as-const": "error",
+		"typescript/triple-slash-reference": "error",
+		"no-var": "error",
+		"prefer-const": "error"
+	},
+	"overrides": [
+		{
+			"files": ["**/*.spec.ts", "**/*.test.ts", "**/*.stories.svelte", "**/*.stories.ts"],
+			"rules": {
+				"typescript/unbound-method": "off",
+				"typescript/no-floating-promises": "off"
+			}
+		}
+	]
+}

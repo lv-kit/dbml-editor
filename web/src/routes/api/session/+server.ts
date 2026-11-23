@@ -19,7 +19,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	let tokenPayload;
 	try {
 		tokenPayload = await verifyFirebaseIdToken(idToken);
-	} catch (e) {
+	} catch {
 		throw error(401, 'Invalid or expired token');
 	}
 

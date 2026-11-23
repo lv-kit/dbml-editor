@@ -51,7 +51,7 @@ DB だけを Docker で起動する場合は `pnpm run db:start`、アプリご�
 
 ```sh
 pnpm run check      # svelte-check + tsc
-pnpm run lint       # prettier --check + eslint
+pnpm run lint       # prettier --check + oxlint
 pnpm run test:unit --run
 pnpm run test:e2e
 ```

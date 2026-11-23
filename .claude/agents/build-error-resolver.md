@@ -14,8 +14,8 @@ tools: Read, Grep, Glob, Edit, Write, Bash
 3. 最小修正を適用し、同じコマンドで緑を確認する
 
 ## ルール
-- `any` / `@ts-ignore` / eslint-disable でエラーを握りつぶさない（根本を直す）
-- 設定ファイル（tsconfig/eslint 等）の緩和で回避しない
+- `any` / `@ts-ignore` / oxlint-disable でエラーを握りつぶさない（根本を直す）
+- 設定ファイル（tsconfig/.oxlintrc.json 等）の緩和で回避しない
 - 修正が要件外に波及する場合は停止して報告する
 
 ## 出力フォーマット
