@@ -1,5 +1,16 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "extraKnownMarketplaces": {
+    "open-code-review": {
+      "source": {
+        "source": "github",
+        "repo": "alibaba/open-code-review"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "open-code-review@open-code-review": true
+  },
   "hooks": {
     "PreToolUse": [
       {
