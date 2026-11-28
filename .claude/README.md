@@ -12,7 +12,7 @@ dbml-editor のエージェントハーネス。入口は `CLAUDE.md`（正本�
 
 | パス | 内容 | 数 |
 |---|---|---|
-| `rules/common/` | 横断規約の正本 | 10 |
+| `rules/common/` | 横断規約の正本 | 11 |
 | `rules/svelte/` `rules/typescript/` | スタック別規約 | 2 |
 | `hooks/` | ガードレール（PreToolUse/PostToolUse） | 9 |
 | `agents/` | subagent 定義（設計/レビューは Opus 4.8 high、実装/検査/公開は Sonnet 5 medium） | 14 |
