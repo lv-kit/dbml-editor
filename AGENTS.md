@@ -12,6 +12,7 @@
 | コード検索ツール選択 | `.claude/rules/common/code-search.md` |
 | セキュリティ・認証監査 | `.claude/rules/common/security.md` |
 | ドキュメント同期 | `.claude/rules/common/doc-sync.md` |
+| UI/UX デザインスキル適用 | `.claude/rules/common/ui-design.md` |
 | スタック別詳細 | `.claude/rules/svelte/` `.claude/rules/typescript/` |
 | 管理セッション（タスク分解・検証） | `.codex/`（README 参照） |
 
@@ -57,6 +58,7 @@
 
 - Svelte コンポーネントは表示、入力、状態、外部連携を混在させすぎない。独立してテストできるロジックは `.ts` へ分離する。
 - UI は既存の shadcn コンポーネントを優先し、Tailwind CSS を使う。色は既存トークンを再利用し、コントラストを確保する。
+- 画面・コンポーネントを実装・変更するときは、`.claude/rules/common/ui-design.md` のデザインスキルと自己チェックを適用する。
 - イベントから取得する値とフォーム値は、境界で型と内容を検証する。
 
 ## テストと検証
